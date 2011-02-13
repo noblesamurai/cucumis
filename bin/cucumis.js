@@ -130,13 +130,17 @@ function runFeature(stepDefs, featureFile, cb) {
 
 function runScenario(scenario, cb) {
 	scenarioCount++;
-	var scenarioUndefined = false;
-	var scenarioFailed = false;
+
+	var testState = {
+		scenarioUndefined: false,
+		scenarioFailed: false,
+		lastStepType: 'GIVEN',
+	};
 
 	console.log('Scenario' + (scenario.outline ? ' Outline' : '') + ': ' + scenario.name);
 
 	if (scenario.breakdown && scenario.breakdown.length) {
-		var lastStepType = 'GIVEN';
+		testState.lastStepType = 'GIVEN';
 
 		var exampleSets = [{}];
 
@@ -156,27 +160,15 @@ function runScenario(scenario, cb) {
 
 		// Examples
 		exampleSets.forEach(function(exampleSet) {
-			// Steps
-			scenario.breakdown.forEach(function(steps) {
-				stepCount++;
-
-				// Step
-				for (var i in steps) {
-					var step = steps[i];
-					runStep(step, lastStepType, exampleSet);
-				}
-			});
-
-			console.log('');
+			runExampleSet(scenario, exampleSet, testState);
 		});
-
 	}
 
-	if (scenarioUndefined) {
+	if (testState.scenarioUndefined) {
 		undefinedScenarioCount++;
 	}
 
-	if (scenarioFailed) {
+	if (testState.scenarioFailed) {
 		failedScenarioCount++;
 	} else {
 		passedScenarioCount++;
@@ -185,12 +177,27 @@ function runScenario(scenario, cb) {
 	cb();
 }
 
-function runStep(step, lastStepType, exampleSet) {
+function runExampleSet(scenario, exampleSet, testState) {
+	// Steps
+	scenario.breakdown.forEach(function(steps) {
+		stepCount++;
+
+		// Step
+		for (var i in steps) {
+			var step = steps[i];
+			runStep(step, exampleSet, testState);
+		}
+	});
+
+	console.log('');
+}
+
+function runStep(step, exampleSet, testState) {
 	var stepType = step[0];
 	if (step[0] == 'AND') {
-		stepType = lastStepType;
+		stepType = testState.lastStepType;
 	}
-	lastStepType = stepType;
+	testState.lastStepType = stepType;
 
 	function capitalize(str) {
 		return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -235,7 +242,7 @@ function runStep(step, lastStepType, exampleSet) {
 
 					color = 'red';
 					failedStepCount ++;
-					scenarioFailed = true;
+					testState.scenarioFailed = true;
 				}
 			}
 		}
@@ -243,7 +250,7 @@ function runStep(step, lastStepType, exampleSet) {
 
 	if (!foundStepDef) { // Undefined step
 		undefinedStepCount++;
-		scenarioUndefined = true;
+		testState.scenarioUndefined = true;
 
 		color = 'yellow';
 
