@@ -77,7 +77,7 @@ function runFeature(stepDefs, featureFile) {
 									var foundStepDef = false;
 									stepDefs.forEach(function (stepDef) {
 										var matches;
-										if (stepDef.operator.toUpperCase() == stepType) {
+										if (!foundStepDef && stepDef.operator.toUpperCase() == stepType) {
 											if (matches = stepDef.pattern.exec(stepText)) {
 												foundStepDef = true;
 												var stepFn = stepDef.generator(topic);
@@ -87,7 +87,7 @@ function runFeature(stepDefs, featureFile) {
 									});
 
 									if (!foundStepDef) {
-										console.log('    Undefined Stepx!');
+										console.log('    Undefined Step!');
 									}
 								}
 							});
