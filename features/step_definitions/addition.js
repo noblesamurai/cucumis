@@ -42,6 +42,9 @@ Steps.Given(/^I have a calculator$/, function(topic) {
 	return function() {
 
 		calc = new Calculator();
+		setTimeout(function() {
+			topic();
+		}, 1000);
 
 		return topic;
 	};

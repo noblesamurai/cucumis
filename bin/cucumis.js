@@ -8,6 +8,9 @@ var kyuri = require('kyuri'),
 // set this to true to disable console colors
 var boring = false;
 
+// test timeout
+var timeout = 2000;
+
 // Prefer mustache style templates
 _.templateSettings = {
   interpolate : /\{\{(.+?)\}\}/g
@@ -224,8 +227,7 @@ function runStep(step, exampleSet, testState, cb) {
 
 	testState.foundStepDef = false;
 	testState.color = 'green';
-
-	var errMsg = '';
+	testState.errMsg = '';
 
 	var myStepDefs = _.clone(stepDefs);
 
@@ -258,8 +260,8 @@ function runStep(step, exampleSet, testState, cb) {
 			}
 
 			console.log(colorize(testState.color, '  ' + stepLine));
-			if (errMsg) {
-				console.log(colorize('red', indent(errMsg, 2)));
+			if (testState.errMsg) {
+				console.log(colorize('red', indent(testState.errMsg, 2)));
 			}
 
 			cb();
@@ -275,28 +277,45 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 
 			var topic = {};
 
-			var stepFn = stepDef.generator(topic);
-			
 			// Run step
+			var id;
 			try {
+				id = setTimeout(function(){
+					stepError(id, new Error('Test timed out (' + timeout + 'ms)'));
+				}, timeout);
+
+				var done = function() {
+					clearTimeout(id);
+					testState.color = 'green';
+					passedStepCount ++;
+
+					cb();
+				};
+
+				var stepFn = stepDef.generator(done);
 				stepFn.apply(stepFn, matches.slice(1));
-				testState.color = 'green';
-				passedStepCount ++;
+
 			} catch (err) {
-				var errors = [];
-				errors.push(err.name ? 'name: ' + err.name : '');
-				errors.push(err.message ? 'message: ' + err.message : '');
-				errors.push(err.stack ? indent(err.stack, 1) : '');
-				errMsg = errors.join('\n');
-
-				testState.color = 'red';
-				failedStepCount ++;
-				testState.scenarioFailed = true;
+				stepError(id, err);
 			}
-
-			cb();
 			return;
 		}
+	}
+
+	function stepError(id, err) {
+		clearTimeout(id);
+
+		var errors = [];
+		errors.push(err.name ? 'name: ' + err.name : '');
+		errors.push(err.message ? 'message: ' + err.message : '');
+		errors.push(err.stack ? indent(err.stack, 1) : '');
+		testState.errMsg = errors.join('\n');
+
+		testState.color = 'red';
+		failedStepCount ++;
+		testState.scenarioFailed = true;
+
+		cb();
 	}
 
 	cb();
