@@ -62,7 +62,7 @@ function runFeatures() {
 
 	(function next(){
 		if (features.length) {
-			runFeature(stepDefs, features.shift(), next);
+			runFeature(features.shift(), next);
 		}
 	})();
 }
@@ -100,7 +100,7 @@ function printReportSummary() {
 	}
 }
 
-function runFeature(stepDefs, featureFile, cb) {
+function runFeature(featureFile, cb) {
 	var data = fs.readFileSync(featureFile);
 	var ast = kyuri.parse(data.toString());
 
@@ -222,68 +222,78 @@ function runStep(step, exampleSet, testState, cb) {
 
 	var stepLine = capitalize(step[0]) + ' ' + stepText;
 
-	var foundStepDef = false;
+	testState.foundStepDef = false;
 	var color = 'green';
 
 	var errMsg = '';
 
+	var myStepDefs = _.clone(stepDefs);
+
 	// Match step definitions against current step
-	stepDefs.forEach(function (stepDef) {
-		var matches;
-		if (!foundStepDef && stepDef.operator.toUpperCase() == stepType.toUpperCase()) {
-			if (matches = stepDef.pattern.exec(stepText)) {
-				foundStepDef = true;
+	(function next(){
+		if (myStepDefs.length) {
+			runStepDef(myStepDefs.shift(), stepType, stepText, testState, next);
+		} else {
+			if (!testState.foundStepDef) { // Undefined step
+				undefinedStepCount++;
+				testState.scenarioUndefined = true;
 
-				var topic = {};
+				color = 'yellow';
 
-				var stepFn = stepDef.generator(topic);
-				
-				// Run step
-				try {
-					stepFn.apply(stepFn, matches.slice(1));
-					color = 'green';
-					passedStepCount ++;
-				} catch (err) {
-					var errors = [];
-					errors.push(err.name ? 'name: ' + err.name : '');
-					errors.push(err.message ? 'message: ' + err.message : '');
-					errors.push(err.stack ? indent(err.stack, 1) : '');
-					errMsg = errors.join('\n');
+				var re = stepText;
+				var args = [];
 
-					color = 'red';
-					failedStepCount ++;
-					testState.scenarioFailed = true;
-				}
+				re = re.replace(/(\s|^)(\d+)(\s|$)/, function(str, m1, m2, m3) {
+					args.push('arg' + (args.length + 1));
+					return m1 + '(\\d+)' + m3;
+				});
+
+				re = re.replace(/(\s|^)("[^']*")(\s|$)/, function(str, m1, m2, m3) {
+					args.push('arg' + (args.length + 1));
+					return m1 + '"([^"]*)"' + m3;
+				});
+
+				var snippet = undefinedStepTemplate({type: stepType, title: re, args: args.join(', ')});
+				undefinedSteps[snippet] = true;
+			}
+
+			console.log(colorize(color, '  ' + stepLine));
+			if (errMsg) {
+				console.log(colorize('red', indent(errMsg, 2)));
+			}
+
+			cb();
+		}
+	})();
+}
+
+function runStepDef(stepDef, stepType, stepText, testState, cb) {
+	var matches;
+	if (!testState.foundStepDef && stepDef.operator.toUpperCase() == stepType.toUpperCase()) {
+		if (matches = stepDef.pattern.exec(stepText)) {
+			testState.foundStepDef = true;
+
+			var topic = {};
+
+			var stepFn = stepDef.generator(topic);
+			
+			// Run step
+			try {
+				stepFn.apply(stepFn, matches.slice(1));
+				color = 'green';
+				passedStepCount ++;
+			} catch (err) {
+				var errors = [];
+				errors.push(err.name ? 'name: ' + err.name : '');
+				errors.push(err.message ? 'message: ' + err.message : '');
+				errors.push(err.stack ? indent(err.stack, 1) : '');
+				errMsg = errors.join('\n');
+
+				color = 'red';
+				failedStepCount ++;
+				testState.scenarioFailed = true;
 			}
 		}
-	});
-
-	if (!foundStepDef) { // Undefined step
-		undefinedStepCount++;
-		testState.scenarioUndefined = true;
-
-		color = 'yellow';
-
-		var re = stepText;
-		var args = [];
-
-		re = re.replace(/(\s|^)(\d+)(\s|$)/, function(str, m1, m2, m3) {
-			args.push('arg' + (args.length + 1));
-			return m1 + '(\\d+)' + m3;
-		});
-
-		re = re.replace(/(\s|^)("[^']*")(\s|$)/, function(str, m1, m2, m3) {
-			args.push('arg' + (args.length + 1));
-			return m1 + '"([^"]*)"' + m3;
-		});
-
-		var snippet = undefinedStepTemplate({type: stepType, title: re, args: args.join(', ')});
-		undefinedSteps[snippet] = true;
-	}
-
-	console.log(colorize(color, '  ' + stepLine));
-	if (errMsg) {
-		console.log(colorize('red', indent(errMsg, 2)));
 	}
 
 	cb();
