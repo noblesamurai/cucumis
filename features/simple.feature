@@ -1,4 +1,4 @@
-Feature: Addition     #AND A COMMENT!!!
+Feature: Addition
 	In order to avoid silly mistakes
 	As a math idiot
 	I want to be able to add up numbers
