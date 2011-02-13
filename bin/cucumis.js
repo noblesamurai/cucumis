@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-var kyuri = require('kyuri');
-var path = require('path');
-var fs = require('fs');
+var kyuri = require('kyuri'),
+    path = require('path'),
+    fs = require('fs'),
+	_ = require('underscore');
 
 var stepDefs = [];
 var stepDefFiles = fs.readdirSync(path.join(process.cwd(), 'features/step_definitions'));
@@ -25,7 +26,15 @@ function runFeature(stepDefs, featureFile) {
 
 	var topic = {};
 
+	_.templateSettings = {
+	  interpolate : /\{\{(.+?)\}\}/g
+	};
+
+	var undefinedStepTemplate = _.template(fs.readFileSync(path.join(__dirname, '../lib/templates/stepdef.js.tpl')).toString());
+	var undefinedSteps = {};
+
 	for (var index in ast) {
+
 		if (ast[index]) {
 			var feature = ast[1];
 			console.log('Feature: ' + feature.name);
@@ -66,6 +75,8 @@ function runFeature(stepDefs, featureFile) {
 									}
 									lastStepType = stepType;
 
+									stepType = stepType.charAt(0).toUpperCase() + stepType.slice(1).toLowerCase();
+
 									var stepText = step[1];
 									for (var exampleVar in exampleSet) {
 										stepText = stepText.replace(new RegExp('<' + exampleVar + '>', 'g'), exampleSet[exampleVar]);
@@ -87,7 +98,21 @@ function runFeature(stepDefs, featureFile) {
 									});
 
 									if (!foundStepDef) {
-										console.log('    Undefined Step!');
+										var re = stepText;
+										var args = [];
+
+										re = re.replace(/(\s|^)(\d+)(\s|$)/, function(str, m1, m2, m3) {
+											args.push('arg' + (args.length + 1));
+											return m1 + '(\\d+)' + m3;
+										});
+
+										re = re.replace(/(\s|^)("[^']*")(\s|$)/, function(str, m1, m2, m3) {
+											args.push('arg' + (args.length + 1));
+											return m1 + '"([^"]*)"' + m3;
+										});
+
+										var snippet = undefinedStepTemplate({type: stepType, title: re, args: args.join(', ')});
+										undefinedSteps[snippet] = true;
 									}
 								}
 							});
@@ -98,6 +123,14 @@ function runFeature(stepDefs, featureFile) {
 					}
 				}); 
 			}
+		}
+	}
+
+	if (_.keys(undefinedSteps).length) {
+		console.log('You can implement step definitions for undefined steps with these snippets:\n');
+
+		for (var undefinedStep in undefinedSteps) {
+			console.log(undefinedStep);
 		}
 	}
 }
