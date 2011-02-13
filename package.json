@@ -1,0 +1,13 @@
+{
+	"name"			: "cucumis",
+	"version"		: "v1.0.1",
+	"description"	: "BDD Cucumber Style Asynchronous Testing Framework for node.js",
+	"homepage"		: "https://github.com/noblesamurai/cucumis",
+	"keywords"		: ["testing", "bdd", "cucumber", "gherkin", "tests"],
+	"author"        : "Eugene Ware <eugene@noblesamurai.com>",
+	"maintainers"   : ["Eugene Ware <eugene@noblesamurai.com>"],
+	"licenses"      : ["MIT"],
+    "dependencies"  : {"kyuri": ">=0.1.0", "should": ">=0.0.4"},
+	"bin"			: "./bin/cucumis",
+	"repository"	: { "type": "git", "url": "http://github.com/noblesamurai/cucumis.git" }
+}
