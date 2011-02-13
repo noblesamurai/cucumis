@@ -223,7 +223,7 @@ function runStep(step, exampleSet, testState, cb) {
 	var stepLine = capitalize(step[0]) + ' ' + stepText;
 
 	testState.foundStepDef = false;
-	var color = 'green';
+	testState.color = 'green';
 
 	var errMsg = '';
 
@@ -238,7 +238,7 @@ function runStep(step, exampleSet, testState, cb) {
 				undefinedStepCount++;
 				testState.scenarioUndefined = true;
 
-				color = 'yellow';
+				testState.color = 'yellow';
 
 				var re = stepText;
 				var args = [];
@@ -257,7 +257,7 @@ function runStep(step, exampleSet, testState, cb) {
 				undefinedSteps[snippet] = true;
 			}
 
-			console.log(colorize(color, '  ' + stepLine));
+			console.log(colorize(testState.color, '  ' + stepLine));
 			if (errMsg) {
 				console.log(colorize('red', indent(errMsg, 2)));
 			}
@@ -280,7 +280,7 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 			// Run step
 			try {
 				stepFn.apply(stepFn, matches.slice(1));
-				color = 'green';
+				testState.color = 'green';
 				passedStepCount ++;
 			} catch (err) {
 				var errors = [];
@@ -289,10 +289,13 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 				errors.push(err.stack ? indent(err.stack, 1) : '');
 				errMsg = errors.join('\n');
 
-				color = 'red';
+				testState.color = 'red';
 				failedStepCount ++;
 				testState.scenarioFailed = true;
 			}
+
+			cb();
+			return;
 		}
 	}
 
