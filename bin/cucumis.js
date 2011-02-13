@@ -41,8 +41,10 @@ var passedScenarioCount = 0;
 
 var failedStepCount = 0;
 var failedScenarioCount = 0;
+var startTime = Date.now();
 
 runFeatures();
+process.on('exit', printReportSummary);
 
 function strJoin() {
 	return _.compact(arguments).join(', ');;
@@ -51,7 +53,6 @@ function strJoin() {
 function runFeatures() {
 	var featureFiles = fs.readdirSync(path.join(process.cwd(), 'features'));
 
-	var startTime = Date.now();
 	var features = [];
 	featureFiles.forEach(function(featureFile) {
 		if (featureFile.match(/.feature$/)) {
@@ -59,10 +60,14 @@ function runFeatures() {
 		}
 	});
 
-	features.forEach(function(featureFile) {
-		runFeature(stepDefs, featureFile);
-	});
+	(function next(){
+		if (features.length) {
+			runFeature(stepDefs, features.shift(), next);
+		}
+	})();
+}
 
+function printReportSummary() {
 	// TODO: implement skipped and pending
 	// pending skips the rest of the steps
 
@@ -95,7 +100,7 @@ function runFeatures() {
 	}
 }
 
-function runFeature(stepDefs, featureFile) {
+function runFeature(stepDefs, featureFile, cb) {
 	var data = fs.readFileSync(featureFile);
 	var ast = kyuri.parse(data.toString());
 
@@ -115,6 +120,8 @@ function runFeature(stepDefs, featureFile) {
 			}
 		}
 	}
+
+	cb();
 }
 
 function runScenario(scenario) {
