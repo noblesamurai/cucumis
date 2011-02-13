@@ -19,6 +19,19 @@ _.templateSettings = {
 // template for undefined steps
 var undefinedStepTemplate = _.template(fs.readFileSync(path.join(__dirname, '../lib/templates/stepdef.js.tpl')).toString());
 
+// uncaught expception handling
+var _stepError = {
+	id: 0,
+	handler: function(id, err) {
+		throw err;
+	},
+};
+
+process.on('uncaughtException', function (err) {
+	console.log('caught...');
+	_stepError.handler(_stepError.id, err);
+});
+
 // Load up step definitions
 var stepDefs = [];
 try {
@@ -273,6 +286,7 @@ function runStep(step, exampleSet, testState, cb) {
 	})();
 }
 
+
 function runStepDef(stepDef, stepType, stepText, testState, cb) {
 	var matches;
 	if (!testState.foundStepDef && stepDef.operator.toUpperCase() == stepType.toUpperCase()) {
@@ -285,10 +299,14 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 			var id;
 			var runTest = true;
 			try {
+
 				id = setTimeout(function(){
 					runTest = false;
 					stepError(id, new Error('Test timed out (' + timeout + 'ms)'));
 				}, timeout);
+
+				_stepError.handler = stepError;
+				_stepError.id = id;
 
 				var done = function() {
 					if (runTest) {
