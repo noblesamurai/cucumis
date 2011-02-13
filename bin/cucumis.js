@@ -159,25 +159,28 @@ function runScenario(scenario, cb) {
 		}
 
 		// Examples
-		exampleSets.forEach(function(exampleSet) {
-			runExampleSet(scenario, exampleSet, testState);
-		});
+		(function next(){
+			if (exampleSets.length) {
+				runExampleSet(scenario, exampleSets.shift(), testState, next);
+			} else {
+				if (testState.scenarioUndefined) {
+					undefinedScenarioCount++;
+				}
+
+				if (testState.scenarioFailed) {
+					failedScenarioCount++;
+				} else {
+					passedScenarioCount++;
+				}
+
+				cb();
+			}
+		})();
 	}
 
-	if (testState.scenarioUndefined) {
-		undefinedScenarioCount++;
-	}
-
-	if (testState.scenarioFailed) {
-		failedScenarioCount++;
-	} else {
-		passedScenarioCount++;
-	}
-
-	cb();
 }
 
-function runExampleSet(scenario, exampleSet, testState) {
+function runExampleSet(scenario, exampleSet, testState, cb) {
 	// Steps
 	scenario.breakdown.forEach(function(steps) {
 		stepCount++;
@@ -190,6 +193,8 @@ function runExampleSet(scenario, exampleSet, testState) {
 	});
 
 	console.log('');
+
+	cb();
 }
 
 function runStep(step, exampleSet, testState) {
