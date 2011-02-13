@@ -8,18 +8,18 @@ var stepDefs = [];
 var stepDefFiles = fs.readdirSync(path.join(process.cwd(), 'features/step_definitions'));
 stepDefFiles.forEach(function (file) {
 	if (file.match(/.js$/)) {
-		stepDefs.concat(require(path.join(process.cwd(), 'features/step_definitions', file)));
+		stepDefs = stepDefs.concat(require(path.join(process.cwd(), 'features/step_definitions', file)));
 	}
 });
 
 var featureFiles = fs.readdirSync(path.join(process.cwd(), 'features'));
 featureFiles.forEach(function(featureFile) {
 	if (featureFile.match(/.feature$/)) {
-		runFeature(path.join(process.cwd(), 'features', featureFile));
+		runFeature(stepDefs, path.join(process.cwd(), 'features', featureFile));
 	}
 });
 
-function runFeature(featureFile) {
+function runFeature(stepDefs, featureFile) {
 	var data = fs.readFileSync(featureFile);
 	var ast = kyuri.parse(data.toString());
 
@@ -74,15 +74,21 @@ function runFeature(featureFile) {
 									var stepLine = step[0] + ' ' + stepText;
 									console.log('  ' + stepLine);
 
+									var foundStepDef = false;
 									stepDefs.forEach(function (stepDef) {
 										var matches;
 										if (stepDef.operator.toUpperCase() == stepType) {
 											if (matches = stepDef.pattern.exec(stepText)) {
+												foundStepDef = true;
 												var stepFn = stepDef.generator(topic);
 												stepFn.apply(stepFn, matches.slice(1));
 											}
 										}
 									});
+
+									if (!foundStepDef) {
+										console.log('    Undefined Stepx!');
+									}
 								}
 							});
 
