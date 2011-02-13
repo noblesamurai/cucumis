@@ -44,6 +44,9 @@ featureFiles.forEach(function(featureFile) {
 	}
 });
 
+// TODO: implement skipped and pending
+// pending skips the rest of the steps
+
 var undefinedScenariosStr = undefinedScenarioCount ? colorize('[yellow]{' + undefinedScenarioCount + ' undefined}') : '';
 var undefinedStepsStr = undefinedStepCount ? colorize('[yellow]{' + undefinedStepCount + ' undefined}') : '';
 
@@ -147,6 +150,8 @@ function runFeature(stepDefs, featureFile) {
 									var foundStepDef = false;
 									var color = 'green';
 
+									var errMsg = '';
+
 									stepDefs.forEach(function (stepDef) {
 										var matches;
 										if (!foundStepDef && stepDef.operator.toUpperCase() == stepType.toUpperCase()) {
@@ -158,6 +163,12 @@ function runFeature(stepDefs, featureFile) {
 													color = 'green';
 													passedStepCount ++;
 												} catch (err) {
+													var errors = [];
+													errors.push(err.name ? 'name: ' + err.name : '');
+													errors.push(err.message ? 'message: ' + err.message : '');
+													errors.push(err.stack ? indent(err.stack, 1) : '');
+													errMsg = errors.join('\n');
+
 													color = 'red';
 													failedStepCount ++;
 													scenarioFailed = true;
@@ -190,6 +201,9 @@ function runFeature(stepDefs, featureFile) {
 									}
 
 									console.log(colorize(color, '  ' + stepLine));
+									if (errMsg) {
+										console.log(colorize('red', indent(errMsg, 2)));
+									}
 								}
 							});
 
