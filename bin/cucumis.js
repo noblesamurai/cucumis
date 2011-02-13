@@ -96,7 +96,7 @@ function printReportSummary() {
 
 	if (_.keys(undefinedSteps).length) {
 		console.log(colorize('[yellow]{You can implement step definitions for undefined steps with these snippets:\n}'));
-		console.log(colorize('yellow', 'var Steps = require(\'kyuri\').Steps;\n'));
+		console.log(colorize('yellow', 'var Steps = require(\'cucumis\').Steps;\n'));
 
 		for (var undefinedStep in undefinedSteps) {
 			console.log(colorize('yellow', undefinedStep));
