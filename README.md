@@ -12,7 +12,7 @@ It was built upon the gherkin parse [kyuri](https://github.com/nodejitsu/kyuri).
 
 The easiest way to install cucumis is via the npm package manager:
 
-	npm install cucmis
+	npm install cucumis
 
 ## Writing tests
 
