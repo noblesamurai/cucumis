@@ -2,16 +2,16 @@ _ = require('underscore');
 var fs = require('fs'),
     path = require('path');
 
+_.templateSettings = {
+  interpolate : /\{\{(.+?)\}\}/g
+};
+
 module.exports = require('expressobdd')({
 	'templating': {
 		'it should be able to use underscore': function() {
 			_.should.not.equal(undefined);
 		},
 		'it should be able to use a simple template': function() {
-			_.templateSettings = {
-			  interpolate : /\{\{(.+?)\}\}/g
-			};
-
 			var out = _.template('Hello {{name}}', {name: 'Fred'});
 			out.should.eql('Hello Fred');
 		},
@@ -22,6 +22,11 @@ module.exports = require('expressobdd')({
 				var out = _.template(data.toString(), {name: 'Fred'});
 				out.should.eql('Hello Fred,\n\nThis is a cool template\n');
 			});
+		},
+		'it shoud be able to compile a template': function() {
+			var tpl = _.template('Hello {{name}}');
+			var out = tpl({name: 'Fred'});
+			out.should.eql('Hello Fred');
 		},
 	},
 });
