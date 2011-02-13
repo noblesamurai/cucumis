@@ -8,12 +8,15 @@ var kyuri = require('kyuri'),
 var boring = false;
 
 var stepDefs = [];
-var stepDefFiles = fs.readdirSync(path.join(process.cwd(), 'features/step_definitions'));
-stepDefFiles.forEach(function (file) {
-	if (file.match(/.js$/)) {
-		stepDefs = stepDefs.concat(require(path.join(process.cwd(), 'features/step_definitions', file)));
-	}
-});
+try {
+	var stepDefFiles = fs.readdirSync(path.join(process.cwd(), 'features/step_definitions'));
+	stepDefFiles.forEach(function (file) {
+		if (file.match(/.js$/)) {
+			stepDefs = stepDefs.concat(require(path.join(process.cwd(), 'features/step_definitions', file)));
+		}
+	});
+} catch (err) {
+}
 
 var featureFiles = fs.readdirSync(path.join(process.cwd(), 'features'));
 var undefinedSteps = {};
@@ -31,18 +34,7 @@ var failedStepCount = 0;
 var failedScenarioCount = 0;
 
 function strJoin() {
-	var ret = '';
-
-	var args = Array.prototype.slice.call(arguments);
-
-	for (var i = 0; i < args.length; i++) {
-		ret += args[i];
-		if (args[i] && args[i + 1]) {
-			ret += ', ';
-		}
-	}
-
-	return ret;
+	return _.compact(arguments).join(', ');;
 }
 
 var startTime = Date.now();
