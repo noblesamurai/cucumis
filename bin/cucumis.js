@@ -101,6 +101,8 @@ function printReportSummary() {
 		for (var undefinedStep in undefinedSteps) {
 			console.log(colorize('yellow', undefinedStep));
 		}
+
+		console.log(colorize('yellow', '\nSteps.export(module);'));
 	}
 }
 
