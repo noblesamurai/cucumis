@@ -5,6 +5,8 @@ var kyuri = require('kyuri'),
     fs = require('fs'),
 	_ = require('underscore');
 
+var boring = false;
+
 var stepDefs = [];
 var stepDefFiles = fs.readdirSync(path.join(process.cwd(), 'features/step_definitions'));
 stepDefFiles.forEach(function (file) {
@@ -14,11 +16,19 @@ stepDefFiles.forEach(function (file) {
 });
 
 var featureFiles = fs.readdirSync(path.join(process.cwd(), 'features'));
+var undefinedSteps = {};
 featureFiles.forEach(function(featureFile) {
 	if (featureFile.match(/.feature$/)) {
 		runFeature(stepDefs, path.join(process.cwd(), 'features', featureFile));
 	}
 });
+if (_.keys(undefinedSteps).length) {
+	console.log(colorize('[yellow]{You can implement step definitions for undefined steps with these snippets:\n}'));
+
+	for (var undefinedStep in undefinedSteps) {
+		console.log(colorize('yellow', undefinedStep));
+	}
+}
 
 function runFeature(stepDefs, featureFile) {
 	var data = fs.readFileSync(featureFile);
@@ -31,7 +41,6 @@ function runFeature(stepDefs, featureFile) {
 	};
 
 	var undefinedStepTemplate = _.template(fs.readFileSync(path.join(__dirname, '../lib/templates/stepdef.js.tpl')).toString());
-	var undefinedSteps = {};
 
 	for (var index in ast) {
 
@@ -125,12 +134,28 @@ function runFeature(stepDefs, featureFile) {
 			}
 		}
 	}
+}
 
-	if (_.keys(undefinedSteps).length) {
-		console.log('You can implement step definitions for undefined steps with these snippets:\n');
+/**
+ * Colorize the given string using ansi-escape sequences.
+ * Disabled when --boring is set.
+ *
+ * @param {String} str
+ * @return {String}
+ */
 
-		for (var undefinedStep in undefinedSteps) {
-			console.log(undefinedStep);
-		}
+function colorize(color, str){
+	var colors = { bold: 1, red: 31, green: 32, yellow: 33 };
+	if (arguments.length == 1) {
+		str = color;
+		return str.replace(/\[(\w+)\]\{([^]*?)\}/g, function(_, color, str){
+			return boring
+				? str
+				: '\x1B[' + colors[color] + 'm' + str + '\x1B[0m';
+		});
+	} else {
+		return boring
+			? str
+			: '\x1B[' + colors[color] + 'm' + str + '\x1B[0m';
 	}
 }
