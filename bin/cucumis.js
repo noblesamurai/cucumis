@@ -2,7 +2,16 @@
 
 var kyuri = require('kyuri');
 var path = require('path');
-var stepDefs = require(path.join(process.cwd(), 'features/step_definitions/addition'));
+var fs = require('fs');
+
+var stepDefs = [];
+var stepDefFiles = fs.readdirSync(path.join(process.cwd(), 'features/step_definitions'));
+stepDefFiles.forEach(function (file) {
+	if (file.match(/.js$/)) {
+		stepDefs.concat(require(path.join(process.cwd(), 'features/step_definitions/' + file)));
+	}
+});
+
 var fs = require('fs');
 
 var data = fs.readFileSync(path.join(process.cwd(), 'features/simple.feature'));
