@@ -17,11 +17,61 @@ stepDefFiles.forEach(function (file) {
 
 var featureFiles = fs.readdirSync(path.join(process.cwd(), 'features'));
 var undefinedSteps = {};
+
+var scenarioCount = 0;
+var stepCount = 0;
+
+var undefinedStepCount = 0;
+var undefinedScenarioCount = 0;
+
+var passedStepCount = 0;
+var passedScenarioCount = 0;
+
+var failedStepCount = 0;
+var failedScenarioCount = 0;
+
+function strJoin() {
+	var ret = '';
+
+	var args = Array.prototype.slice.call(arguments);
+
+	for (var i = 0; i < args.length; i++) {
+		ret += args[i];
+		if (args[i] && args[i + 1]) {
+			ret += ', ';
+		}
+	}
+
+	return ret;
+}
+
+var startTime = Date.now();
 featureFiles.forEach(function(featureFile) {
 	if (featureFile.match(/.feature$/)) {
 		runFeature(stepDefs, path.join(process.cwd(), 'features', featureFile));
 	}
 });
+
+var undefinedScenariosStr = undefinedScenarioCount ? colorize('[yellow]{' + undefinedScenarioCount + ' undefined}') : '';
+var undefinedStepsStr = undefinedStepCount ? colorize('[yellow]{' + undefinedStepCount + ' undefined}') : '';
+
+var passedScenariosStr = passedScenarioCount ? colorize('[green]{' + passedScenarioCount + ' passed}') : '';
+var passedStepsStr = passedStepCount ? colorize('[green]{' + passedStepCount + ' passed}') : '';
+
+var failedScenariosStr = failedScenarioCount ? colorize('[red]{' + failedScenarioCount + ' failed}') : '';
+var failedStepsStr = failedStepCount ? colorize('[red]{' + failedStepCount + ' failed}') : '';
+
+console.log(scenarioCount + ' scenarios (' + strJoin(passedScenariosStr, failedScenariosStr, undefinedScenariosStr) + ')');
+console.log(stepCount + ' steps (' + strJoin(passedStepsStr, failedStepsStr, undefinedStepsStr) + ')');
+
+var timeElapsed = (Date.now() - startTime)/1000;
+
+var minutes = Math.floor(timeElapsed / 60);
+var seconds = timeElapsed - minutes*60;
+
+console.log(minutes + 'm' + seconds.toFixed(3) + 's');
+console.log();
+
 if (_.keys(undefinedSteps).length) {
 	console.log(colorize('[yellow]{You can implement step definitions for undefined steps with these snippets:\n}'));
 
@@ -51,6 +101,9 @@ function runFeature(stepDefs, featureFile) {
 
 			if (feature.scenarios && feature.scenarios.length) {
 				feature.scenarios.forEach(function(scenario) {
+					scenarioCount++;
+					var scenarioUndefined = true;
+					var scenarioFailed = false;
 
 					console.log('Scenario' + (scenario.outline ? ' Outline' : '') + ': ' + scenario.name);
 
@@ -75,6 +128,8 @@ function runFeature(stepDefs, featureFile) {
 
 						exampleSets.forEach(function(exampleSet) {
 							scenario.breakdown.forEach(function(steps) {
+								stepCount++;
+
 								for (var i in steps) {
 									var step = steps[i];
 
@@ -98,21 +153,32 @@ function runFeature(stepDefs, featureFile) {
 									var stepLine = capitalize(step[0]) + ' ' + stepText;
 
 									var foundStepDef = false;
+									var color = 'green';
+
 									stepDefs.forEach(function (stepDef) {
 										var matches;
 										if (!foundStepDef && stepDef.operator.toUpperCase() == stepType.toUpperCase()) {
 											if (matches = stepDef.pattern.exec(stepText)) {
 												foundStepDef = true;
 												var stepFn = stepDef.generator(topic);
-												stepFn.apply(stepFn, matches.slice(1));
+												try {
+													stepFn.apply(stepFn, matches.slice(1));
+													color = 'green';
+													passedStepCount ++;
+												} catch (err) {
+													color = 'red';
+													failedStepCount ++;
+													scenarioFailed = true;
+												}
 											}
 										}
 									});
 
-									if (foundStepDef) {
-										console.log(colorize('green', '  ' + stepLine));
-									} else {
-										console.log(colorize('yellow', '  ' + stepLine));
+									if (!foundStepDef) {
+										undefinedStepCount++;
+										scenarioUndefined = true;
+
+										color = 'yellow';
 
 										var re = stepText;
 										var args = [];
@@ -130,12 +196,24 @@ function runFeature(stepDefs, featureFile) {
 										var snippet = undefinedStepTemplate({type: stepType, title: re, args: args.join(', ')});
 										undefinedSteps[snippet] = true;
 									}
+
+									console.log(colorize(color, '  ' + stepLine));
 								}
 							});
 
 							console.log('');
 						});
 
+					}
+
+					if (scenarioUndefined) {
+						undefinedScenarioCount++;
+					}
+
+					if (scenarioFailed) {
+						failedScenarioCount++;
+					} else {
+						passedScenarioCount++;
 					}
 				}); 
 			}
