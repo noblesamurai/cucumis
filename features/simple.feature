@@ -3,13 +3,7 @@ Feature: Addition     #AND A COMMENT!!!
 	As a math idiot
 	I want to be able to add up numbers
 
-	@tag1 @tag2
-#AND A COMMENT!!!
 	Scenario: Add two numbers
-		"""
-		Hey I'm a pystring, check me out now
-		Multi-line too!
-		"""
 		Given I have a calculator
 		And I have entered 50 into the calculator
 		And I have entered 70 into the calculator
