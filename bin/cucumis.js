@@ -102,7 +102,7 @@ function runFeature(stepDefs, featureFile) {
 			if (feature.scenarios && feature.scenarios.length) {
 				feature.scenarios.forEach(function(scenario) {
 					scenarioCount++;
-					var scenarioUndefined = true;
+					var scenarioUndefined = false;
 					var scenarioFailed = false;
 
 					console.log('Scenario' + (scenario.outline ? ' Outline' : '') + ': ' + scenario.name);
