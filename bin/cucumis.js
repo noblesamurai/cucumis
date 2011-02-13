@@ -47,7 +47,7 @@ function runFeature(stepDefs, featureFile) {
 		if (ast[index]) {
 			var feature = ast[1];
 			console.log('Feature: ' + feature.name);
-			console.log(feature.description);
+			console.log(indent(feature.description, 1));
 
 			if (feature.scenarios && feature.scenarios.length) {
 				feature.scenarios.forEach(function(scenario) {
@@ -84,20 +84,23 @@ function runFeature(stepDefs, featureFile) {
 									}
 									lastStepType = stepType;
 
-									stepType = stepType.charAt(0).toUpperCase() + stepType.slice(1).toLowerCase();
+									function capitalize(str) {
+										return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+									}
+
+									stepType = capitalize(stepType);
 
 									var stepText = step[1];
 									for (var exampleVar in exampleSet) {
 										stepText = stepText.replace(new RegExp('<' + exampleVar + '>', 'g'), exampleSet[exampleVar]);
 									}
 
-									var stepLine = step[0] + ' ' + stepText;
-									console.log('  ' + stepLine);
+									var stepLine = capitalize(step[0]) + ' ' + stepText;
 
 									var foundStepDef = false;
 									stepDefs.forEach(function (stepDef) {
 										var matches;
-										if (!foundStepDef && stepDef.operator.toUpperCase() == stepType) {
+										if (!foundStepDef && stepDef.operator.toUpperCase() == stepType.toUpperCase()) {
 											if (matches = stepDef.pattern.exec(stepText)) {
 												foundStepDef = true;
 												var stepFn = stepDef.generator(topic);
@@ -106,7 +109,11 @@ function runFeature(stepDefs, featureFile) {
 										}
 									});
 
-									if (!foundStepDef) {
+									if (foundStepDef) {
+										console.log(colorize('green', '  ' + stepLine));
+									} else {
+										console.log(colorize('yellow', '  ' + stepLine));
+
 										var re = stepText;
 										var args = [];
 
@@ -158,4 +165,22 @@ function colorize(color, str){
 			? str
 			: '\x1B[' + colors[color] + 'm' + str + '\x1B[0m';
 	}
+}
+
+
+function indent (text, level) {
+	level = level || 0;
+
+	var lines = text.split('\n');
+
+	var indents = '';
+	_.range(level).forEach(function() {
+		indents += '  ';
+	});
+
+	for (var i = 0; i < lines.length; i++) {
+		lines[i] = indents + lines[i]; 
+	}
+
+	return lines.join('\n');
 }
