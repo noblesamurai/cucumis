@@ -4,7 +4,7 @@ Feature: Search Google
 	So that I can find information about stuff
 
 	Scenario: Search for basic keyword
-		Given I am using the "firefox" browser
+		Given I am using the "safari" browser
 		And I am on the "Google" "Home" page
 
 		When I enter "Hello World" into the "Search Query" text field
