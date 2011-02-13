@@ -52,10 +52,15 @@ function runFeatures() {
 	var featureFiles = fs.readdirSync(path.join(process.cwd(), 'features'));
 
 	var startTime = Date.now();
+	var features = [];
 	featureFiles.forEach(function(featureFile) {
 		if (featureFile.match(/.feature$/)) {
-			runFeature(stepDefs, path.join(process.cwd(), 'features', featureFile));
+			features.push(path.join(process.cwd(), 'features', featureFile));
 		}
+	});
+
+	features.forEach(function(featureFile) {
+		runFeature(stepDefs, featureFile);
 	});
 
 	// TODO: implement skipped and pending
