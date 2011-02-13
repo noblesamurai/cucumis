@@ -96,6 +96,7 @@ function printReportSummary() {
 
 	if (_.keys(undefinedSteps).length) {
 		console.log(colorize('[yellow]{You can implement step definitions for undefined steps with these snippets:\n}'));
+		console.log(colorize('yellow', 'var Steps = require(\'kyuri\').Steps;\n'));
 
 		for (var undefinedStep in undefinedSteps) {
 			console.log(colorize('yellow', undefinedStep));
@@ -255,7 +256,7 @@ function runStep(step, exampleSet, testState, cb) {
 					return m1 + '"([^"]*)"' + m3;
 				});
 
-				var snippet = undefinedStepTemplate({type: stepType, title: re, args: args.join(', ')});
+				var snippet = undefinedStepTemplate({type: stepType, title: re, args: [''].concat(args).join(', ')});
 				undefinedSteps[snippet] = true;
 			}
 
@@ -291,10 +292,8 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 
 					cb();
 				};
-
-				var stepFn = stepDef.generator(done);
-				stepFn.apply(stepFn, matches.slice(1));
-
+				
+				stepDef.generator.apply({}, [done].concat(matches.slice(1)));
 			} catch (err) {
 				stepError(id, err);
 			}

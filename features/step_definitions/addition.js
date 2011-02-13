@@ -1,12 +1,4 @@
-/*
- * Addition.feature
- * Step definitions for Feature: 'Addition'
- *
- * Auto-generated using Kyuri: http://github.com/nodejitsu/kyuri
- */
- 
-var kyuri = require('kyuri'),
-    Steps = require('kyuri').Steps;
+var Steps = require('kyuri').Steps;
 
 require('should');
 
@@ -34,50 +26,26 @@ Calculator.prototype = {
 
 var calc;
 
-//
-// Step definitions for Scenario: Add two numbers
-//
-
-Steps.Given(/^I have a calculator$/, function(topic) {
-	return function() {
-
-		calc = new Calculator();
-		setTimeout(function() {
-			topic();
-		}, 1000);
-
-		return topic;
-	};
+Steps.Given(/^I have a calculator$/, function(done) {
+	calc = new Calculator();
+	setTimeout(function() {
+		done();
+	}, 10);
 });
 
-Steps.Given(/^I have entered (\d+) into the calculator$/, function (topic) {
-  return function (value) {
-    // Always use or extend the same topic since you don't 
-    // know how nested or not nested you are at this point
-    topic = topic || {};
-    
+Steps.Given(/^I have entered (\d+) into the calculator$/, function (done, value) {
 	calc.enter(parseInt(value));
-
-    return topic;
-  };
+	done();
 });
 
-Steps.When(/^I press add$/, function (topic) {
-  return function () {
-    // Always use or extend the same topic since you don't 
-    // know how nested or not nested you are at this point
-    topic = topic || {};
-    
+Steps.When(/^I press add$/, function (done) {
 	calc.add();
-    
-    return topic;
-  };
+	done();
 });
 
-Steps.Then(/^the result should be (\d+) on the screen$/, function (topic) {
-  return function (value) {
-  	calc.result().should.eql(parseInt(value));
-  };
+Steps.Then(/^the result should be (\d+) on the screen$/, function (done, value) {
+	calc.result().should.eql(parseInt(value));
+	done();
 });
 
 Steps.export(module);
