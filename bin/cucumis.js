@@ -9,7 +9,7 @@ var kyuri = require('../deps/kyuri/lib/kyuri'),
 var boring = false;
 
 // test timeout
-var timeout = 2000;
+var timeout = 10000;
 
 // Prefer mustache style templates
 _.templateSettings = {
