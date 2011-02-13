@@ -243,6 +243,7 @@ function runStep(step, exampleSet, testState, cb) {
 
 				testState.color = 'yellow';
 
+				// smart parametrization of numbers and strings
 				var re = stepText;
 				var args = [];
 
@@ -280,17 +281,21 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 
 			// Run step
 			var id;
+			var runTest = true;
 			try {
 				id = setTimeout(function(){
+					runTest = false;
 					stepError(id, new Error('Test timed out (' + timeout + 'ms)'));
 				}, timeout);
 
 				var done = function() {
-					clearTimeout(id);
-					testState.color = 'green';
-					passedStepCount ++;
+					if (runTest) {
+						clearTimeout(id);
+						testState.color = 'green';
+						passedStepCount ++;
 
-					cb();
+						cb();
+					}
 				};
 				
 				stepDef.generator.apply({}, [done].concat(matches.slice(1)));
