@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var kyuri = require('kyuri'),
+var kyuri = require('../deps/kyuri/lib/kyuri'),
     path = require('path'),
     fs = require('fs'),
 	_ = require('underscore');
