@@ -182,22 +182,27 @@ function runScenario(scenario, cb) {
 
 function runExampleSet(scenario, exampleSet, testState, cb) {
 	// Steps
-	scenario.breakdown.forEach(function(steps) {
-		stepCount++;
-
+	var steps = [];
+	scenario.breakdown.forEach(function(breakdown) {
 		// Step
-		for (var i in steps) {
-			var step = steps[i];
-			runStep(step, exampleSet, testState);
+		for (var i in breakdown) {
+			var step = breakdown[i];
+			steps.push(step);
 		}
 	});
 
-	console.log('');
-
-	cb();
+	(function next(){
+		if (steps.length) {
+			stepCount++;
+			runStep(steps.shift(), exampleSet, testState, next);
+		} else {
+			console.log('');
+			cb();
+		}
+	})();
 }
 
-function runStep(step, exampleSet, testState) {
+function runStep(step, exampleSet, testState, cb) {
 	var stepType = step[0];
 	if (step[0] == 'AND') {
 		stepType = testState.lastStepType;
@@ -280,6 +285,8 @@ function runStep(step, exampleSet, testState) {
 	if (errMsg) {
 		console.log(colorize('red', indent(errMsg, 2)));
 	}
+
+	cb();
 }
 
 /**
