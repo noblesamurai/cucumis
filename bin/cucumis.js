@@ -114,17 +114,21 @@ function runFeature(stepDefs, featureFile, cb) {
 
 			if (feature.scenarios && feature.scenarios.length) {
 				// Scenarios
-				feature.scenarios.forEach(function(scenario) {
-					runScenario(scenario);
-				}); 
+				var scenarios = feature.scenarios;
+
+				(function next(){
+					if (scenarios.length) {
+						runScenario(scenarios.shift(), next);
+					} else {
+						cb();
+					}
+				})();
 			}
 		}
 	}
-
-	cb();
 }
 
-function runScenario(scenario) {
+function runScenario(scenario, cb) {
 	scenarioCount++;
 	var scenarioUndefined = false;
 	var scenarioFailed = false;
@@ -177,6 +181,8 @@ function runScenario(scenario) {
 	} else {
 		passedScenarioCount++;
 	}
+
+	cb();
 }
 
 function runStep(step, lastStepType, exampleSet) {
