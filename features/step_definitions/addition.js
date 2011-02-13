@@ -19,6 +19,10 @@ Calculator.prototype = {
 		this._stack.push(this._stack.pop() + this._stack.pop());
 	},
 
+	subtract: function() {
+		this._stack.push(-(this._stack.pop() - this._stack.pop()));
+	},
+
 	result: function() {
 		return this._stack[this._stack.length - 1];
 	},
@@ -45,6 +49,11 @@ Steps.When(/^I press add$/, function (done) {
 
 Steps.Then(/^the result should be (\d+) on the screen$/, function (done, value) {
 	calc.result().should.eql(parseInt(value));
+	done();
+});
+
+Steps.When(/^I press subtract$/, function (done) {
+	calc.subtract();
 	done();
 });
 
