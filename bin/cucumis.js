@@ -254,9 +254,9 @@ function runStep(step, exampleSet, testState, cb) {
 					return m1 + '(\\d+)' + m3;
 				});
 
-				re = re.replace(/(\s|^)("[^']*")(\s|$)/, function(str, m1, m2, m3) {
+				re = re.replace(/("[^"]*?")/g, function(str, m1) {
 					args.push('arg' + (args.length + 1));
-					return m1 + '"([^"]*)"' + m3;
+					return '"([^"]*?)"';
 				});
 
 				var snippet = undefinedStepTemplate({type: stepType, title: re, args: [''].concat(args).join(', ')});
