@@ -8,6 +8,7 @@
 	"maintainers"   : ["Eugene Ware <eugene@noblesamurai.com>"],
 	"licenses"      : ["MIT"],
     "dependencies"  : {"should": ">=0.0.4"},
+	"main"			: "./lib/cucumis",
 	"bin"			: "./bin/cucumis",
 	"repository"	: { "type": "git", "url": "http://github.com/noblesamurai/cucumis.git" }
 }
