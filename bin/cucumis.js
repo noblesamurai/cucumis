@@ -102,7 +102,7 @@ function printReportSummary() {
 			console.log(colorize('yellow', undefinedStep));
 		}
 
-		console.log(colorize('yellow', '\nSteps.export(module);'));
+		console.log(colorize('yellow', 'Steps.export(module);\n'));
 	}
 }
 
