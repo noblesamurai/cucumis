@@ -1,3 +1,3 @@
-Steps.{{type}}(/^{{title}}$/, function (done{{args}}) {
-  done();
+Steps.{{type}}(/^{{title}}$/, function (ctx{{args}}) {
+  ctx.pending();
 });

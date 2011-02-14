@@ -67,6 +67,10 @@ var undefinedScenarioCount = 0;
 var passedStepCount = 0;
 var passedScenarioCount = 0;
 
+var pendingStepCount = 0;
+
+var skippedStepCount = 0;
+
 var failedStepCount = 0;
 var failedScenarioCount = 0;
 var startTime = Date.now();
@@ -162,11 +166,15 @@ function printReportSummary() {
 	var passedScenariosStr = passedScenarioCount ? colorize('[green]{' + passedScenarioCount + ' passed}') : '';
 	var passedStepsStr = passedStepCount ? colorize('[green]{' + passedStepCount + ' passed}') : '';
 
+	var pendingStepsStr = pendingStepCount ? colorize('[yellow]{' + pendingStepCount + ' pending}') : '';
+
+	var skippedStepsStr = skippedStepCount ? colorize('[cyan]{' + skippedStepCount + ' skipped}') : '';
+
 	var failedScenariosStr = failedScenarioCount ? colorize('[red]{' + failedScenarioCount + ' failed}') : '';
 	var failedStepsStr = failedStepCount ? colorize('[red]{' + failedStepCount + ' failed}') : '';
 
 	console.log(scenarioCount + ' scenarios (' + strJoin(passedScenariosStr, failedScenariosStr, undefinedScenariosStr) + ')');
-	console.log(stepCount + ' steps (' + strJoin(passedStepsStr, failedStepsStr, undefinedStepsStr) + ')');
+	console.log(stepCount + ' steps (' + strJoin(passedStepsStr, failedStepsStr, skippedStepsStr, undefinedStepsStr, pendingStepsStr) + ')');
 
 	var timeElapsed = (Date.now() - startTime)/1000;
 
@@ -229,6 +237,7 @@ function runScenario(scenario, cb) {
 		scenarioUndefined: false,
 		scenarioFailed: false,
 		lastStepType: 'GIVEN',
+		skip: false,
 	};
 
 	console.log('Scenario' + (scenario.outline ? ' Outline' : '') + ': ' + scenario.name);
@@ -255,6 +264,7 @@ function runScenario(scenario, cb) {
 
 			// Examples
 			(function next(){
+				testState.skip = false;
 				if (exampleSets.length) {
 					runExampleSet(scenario, exampleSets.shift(), testState, next);
 				} else {
@@ -323,7 +333,7 @@ function runStep(step, exampleSet, testState, cb) {
 
 	testState.foundStepDef = false;
 	testState.color = 'green';
-	testState.errMsg = '';
+	testState.msg = '';
 
 	var myStepDefs = _.clone(stepDefs);
 
@@ -357,8 +367,8 @@ function runStep(step, exampleSet, testState, cb) {
 			}
 
 			console.log(colorize(testState.color, '  ' + stepLine));
-			if (testState.errMsg) {
-				console.log(colorize('red', indent(testState.errMsg, 2)));
+			if (testState.msg) {
+				console.log(indent(testState.msg, 2));
 			}
 
 			cb();
@@ -372,35 +382,55 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 		if (matches = stepDef.pattern.exec(stepText)) {
 			testState.foundStepDef = true;
 
-			var topic = {};
+			if (!testState.skip) {
+				// Run step
+				var id;
+				var runTest = true;
+				try {
 
-			// Run step
-			var id;
-			var runTest = true;
-			try {
+					id = setTimeout(function(){
+						runTest = false;
+						stepError(id, new Error('Test timed out (' + timeout + 'ms)'));
+					}, timeout);
 
-				id = setTimeout(function(){
-					runTest = false;
-					stepError(id, new Error('Test timed out (' + timeout + 'ms)'));
-				}, timeout);
+					_stepError.handler = stepError;
+					_stepError.id = id;
 
-				_stepError.handler = stepError;
-				_stepError.id = id;
+					var ctx = {
+						done: function() {
+							if (runTest) {
+								clearTimeout(id);
+								testState.color = 'green';
+								passedStepCount ++;
 
-				var done = function() {
-					if (runTest) {
-						clearTimeout(id);
-						testState.color = 'green';
-						passedStepCount ++;
+								cb();
+							}
+						},
 
-						cb();
-					}
-				};
-				
-				stepDef.generator.apply({}, [done].concat(matches.slice(1)));
-			} catch (err) {
-				stepError(id, err);
+						pending: function() {
+							if (runTest) {
+								clearTimeout(id);
+								testState.color = 'yellow';
+								pendingStepCount ++;
+
+								testState.msg = colorize('yellow', 'TODO: Pending');
+								testState.skip = true;
+
+								cb();
+							}
+						},
+					};
+
+					stepDef.generator.apply({}, [ctx].concat(matches.slice(1)));
+				} catch (err) {
+					stepError(id, err);
+				}
+			} else {
+				testState.color = 'cyan';
+				skippedStepCount ++;
+				cb();
 			}
+
 			return;
 		}
 	}
@@ -412,11 +442,12 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 		errors.push(err.name ? 'name: ' + err.name : '');
 		errors.push(err.message ? 'message: ' + err.message : '');
 		errors.push(err.stack ? indent(err.stack, 1) : '');
-		testState.errMsg = errors.join('\n');
+		testState.msg = colorize('red', errors.join('\n'));
 
 		testState.color = 'red';
 		failedStepCount ++;
 		testState.scenarioFailed = true;
+		testState.skip = true;
 
 		cb();
 	}
@@ -433,7 +464,7 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
  */
 
 function colorize(color, str){
-	var colors = { bold: 1, red: 31, green: 32, yellow: 33 };
+	var colors = { bold: 1, red: 31, green: 32, yellow: 33, blue: 34, magenta: 35, cyan: 36 };
 	if (arguments.length == 1) {
 		str = color;
 		return str.replace(/\[(\w+)\]\{([^]*?)\}/g, function(_, color, str){

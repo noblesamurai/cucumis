@@ -37,7 +37,7 @@ Steps.Runner.on('afterTest', function(done) {
 	}
 });
 
-Steps.Given(/^I am using the "([^"]*)" browser$/, function (done, bt) {
+Steps.Given(/^I am using the "([^"]*)" browser$/, function (ctx, bt) {
 	browserType = bt;
 	browser = soda.createClient({
 		host: 'localhost'
@@ -46,10 +46,10 @@ Steps.Given(/^I am using the "([^"]*)" browser$/, function (done, bt) {
 	  , browser: browserType
 	});
 
-	done();
+	ctx.done();
 });
 
-Steps.Given(/^I am on the "([^"]*?)" "([^"]*?)" page$/, function (done, site, page) {
+Steps.Given(/^I am on the "([^"]*?)" "([^"]*?)" page$/, function (ctx, site, page) {
 	lastSite = site;
 	var url = pageMap[site][page];
 
@@ -58,31 +58,31 @@ Steps.Given(/^I am on the "([^"]*?)" "([^"]*?)" page$/, function (done, site, pa
 		.session()
 		.open(url)
 		.end(function(err) {
-			done();
+			ctx.done();
 		});
 });
 
-Steps.When(/^I enter "([^"]*?)" into the "([^"]*?)" text field$/, function (done, text, field) {
+Steps.When(/^I enter "([^"]*?)" into the "([^"]*?)" text field$/, function (ctx, text, field) {
 	browser
 		.chain
 		.type(fieldMap[lastSite][field], text)
 		.end(function(err) {
-			done();
+			ctx.done();
 		});
 });
 
-Steps.When(/^I click the "([^"]*?)" "([^"]*?)" button$/, function (done, site, field) {
+Steps.When(/^I click the "([^"]*?)" "([^"]*?)" button$/, function (ctx, site, field) {
 	lastSite = site;
 	browser
 		.chain
 		.click(fieldMap[site][field])
 		.waitForPageToLoad(2000)
 		.end(function(err) {
-			done();
+			ctx.done();
 		});
 });
 
-Steps.Then(/^my title should contain "([^"]*?)"$/, function (done, needle) {
+Steps.Then(/^my title should contain "([^"]*?)"$/, function (ctx, needle) {
 	browser
 		.chain
 		.getTitle(function(title){
@@ -90,7 +90,7 @@ Steps.Then(/^my title should contain "([^"]*?)"$/, function (done, needle) {
 		})
 		.end(function(err) {
 			if (err) throw err;
-			done();
+			ctx.done();
 		});
 });
 

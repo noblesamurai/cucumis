@@ -30,31 +30,31 @@ Calculator.prototype = {
 
 var calc;
 
-Steps.Given(/^I have a calculator$/, function(done) {
+Steps.Given(/^I have a calculator$/, function(ctx) {
 	calc = new Calculator();
 	setTimeout(function() {
-		done();
+		ctx.done();
 	}, 10);
 });
 
-Steps.Given(/^I have entered (\d+) into the calculator$/, function (done, value) {
+Steps.Given(/^I have entered (\d+) into the calculator$/, function (ctx, value) {
 	calc.enter(parseInt(value));
-	done();
+	ctx.done();
 });
 
-Steps.When(/^I press add$/, function (done) {
+Steps.When(/^I press add$/, function (ctx) {
 	calc.add();
-	done();
+	ctx.done();
 });
 
-Steps.Then(/^the result should be (\d+) on the screen$/, function (done, value) {
+Steps.Then(/^the result should be (\d+) on the screen$/, function (ctx, value) {
 	calc.result().should.eql(parseInt(value));
-	done();
+	ctx.done();
 });
 
-Steps.When(/^I press subtract$/, function (done) {
+Steps.When(/^I press subtract$/, function (ctx) {
 	calc.subtract();
-	done();
+	ctx.done();
 });
 
 Steps.export(module);
