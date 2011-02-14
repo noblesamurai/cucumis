@@ -1,4 +1,11 @@
 
+v1.0.9 / 2011-02-15 
+==================
+
+  * correct calculation of undefined and pending scenarios
+  * printing for pending scenarios
+  * Support for skipped and pending scenarios
+
 v1.0.8 / 2011-02-14 
 ==================
 
