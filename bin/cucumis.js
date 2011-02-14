@@ -78,14 +78,25 @@ function strJoin() {
 }
 
 function runFeatures() {
-	var featureFiles = fs.readdirSync(path.join(process.cwd(), 'features'));
+	var paths = [path.join(process.cwd(), 'features')];
+	var p;
 
 	var features = [];
-	featureFiles.forEach(function(featureFile) {
-		if (featureFile.match(/.feature$/)) {
-			features.push(path.join(process.cwd(), 'features', featureFile));
-		}
-	});
+
+	while (p = paths.shift()) {
+
+		var files = fs.readdirSync(p);
+
+		// find features
+		files
+			.filter(function(f) { return f.match(/.feature$/) })
+			.forEach(function (f) { features.push(path.join(p, f)) });
+
+		// find more directories to traverse
+		files
+			.filter(function(f) { return fs.statSync(path.join(p, f)).isDirectory(); })
+			.forEach(function (f) { paths.push(path.join(p, f)) });
+	};
 
 	notifyListeners('beforeTest', function() {
 		(function next(){
