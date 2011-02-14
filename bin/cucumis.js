@@ -236,8 +236,8 @@ function runScenario(scenario, cb) {
 	scenarioCount++;
 
 	var testState = {
+		scenarioState: 'passed',
 		scenarioUndefined: false,
-		scenarioFailed: false,
 		lastStepType: 'GIVEN',
 		skip: false,
 	};
@@ -267,17 +267,27 @@ function runScenario(scenario, cb) {
 			// Examples
 			(function next(){
 				testState.skip = false;
+
 				if (exampleSets.length) {
 					runExampleSet(scenario, exampleSets.shift(), testState, next);
 				} else {
 					if (testState.scenarioUndefined) {
 						undefinedScenarioCount++;
-					}
-
-					if (testState.scenarioFailed) {
-						failedScenarioCount++;
 					} else {
-						passedScenarioCount++;
+						switch (testState.scenarioState) {
+							case 'failed':
+								failedScenarioCount++;
+								break;
+
+							case 'pending':
+								pendingScenarioCount++;
+								break;
+
+							case 'passed':
+								passedScenarioCount++;
+								break;
+								
+						}
 					}
 
 					notifyListeners('afterScenario', cb);
@@ -418,6 +428,8 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 								testState.msg = colorize('yellow', 'TODO: Pending');
 								testState.skip = true;
 
+								testState.scenarioState = 'pending';
+
 								cb();
 							}
 						},
@@ -448,7 +460,7 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 
 		testState.color = 'red';
 		failedStepCount ++;
-		testState.scenarioFailed = true;
+		testState.scenarioState = 'failed';
 		testState.skip = true;
 
 		cb();
