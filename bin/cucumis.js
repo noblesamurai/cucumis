@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var kyuri = require('../deps/kyuri/lib/kyuri'),
+var cucumis = require('../lib/cucumis'),
     path = require('path'),
     fs = require('fs'),
 	_ = require('underscore');
@@ -28,7 +28,6 @@ var _stepError = {
 };
 
 process.on('uncaughtException', function (err) {
-	console.log('caught...');
 	_stepError.handler(_stepError.id, err);
 });
 
@@ -60,7 +59,6 @@ var failedScenarioCount = 0;
 var startTime = Date.now();
 
 runFeatures();
-process.on('exit', printReportSummary);
 
 function strJoin() {
 	return _.compact(arguments).join(', ');;
@@ -76,9 +74,39 @@ function runFeatures() {
 		}
 	});
 
-	(function next(){
-		if (features.length) {
-			runFeature(features.shift(), next);
+	notifyListeners('beforeTest', function() {
+		(function next(){
+			if (features.length) {
+				runFeature(features.shift(), next);
+			} else {
+				notifyListeners('afterTest', printReportSummary);
+			}
+		})();
+	});
+}
+
+function notifyListeners(eventName, cb) {
+	var listeners = cucumis.Steps.Runner.listeners(eventName);
+	(function next() {
+		if (listeners.length) {
+			var listener = listeners.shift();
+
+			var responseOk = true;
+
+			var id = setTimeout(function() {
+				responseOk = false;
+				console.log(indent(colorize('red', 'Timeout waiting for response on event: ' + eventName + '\n'), 1));
+				next();
+			}, 100);
+
+			listener(function() {
+				if (responseOk) {
+					clearTimeout(id);
+					next();
+				}
+			});
+		} else {
+			cb();
 		}
 	})();
 }
@@ -121,28 +149,34 @@ function printReportSummary() {
 
 function runFeature(featureFile, cb) {
 	var data = fs.readFileSync(featureFile);
-	var ast = kyuri.parse(data.toString());
+	var ast = cucumis.parse(data.toString());
 
 	// Feature
 	for (var index in ast) {
 
 		if (ast[index]) {
 			var feature = ast[index];
+
 			console.log('Feature: ' + feature.name);
 			console.log(indent(feature.description, 1));
 
-			if (feature.scenarios && feature.scenarios.length) {
-				// Scenarios
-				var scenarios = feature.scenarios;
+			notifyListeners('beforeFeature', function() {
 
-				(function next(){
-					if (scenarios.length) {
-						runScenario(scenarios.shift(), next);
-					} else {
-						cb();
-					}
-				})();
-			}
+				if (feature.scenarios && feature.scenarios.length) {
+					// Scenarios
+					var scenarios = feature.scenarios;
+
+					(function next(){
+						if (scenarios.length) {
+							runScenario(scenarios.shift(), function() {
+								notifyListeners('afterFeature', next);
+							});
+						} else {
+							cb();
+						}
+					})();
+				}
+			});
 		}
 	}
 }
