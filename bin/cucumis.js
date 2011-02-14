@@ -3,7 +3,8 @@
 var cucumis = require('../lib/cucumis'),
     path = require('path'),
     fs = require('fs'),
-	_ = require('underscore');
+	_ = require('underscore'),
+	globSync = require('glob').globSync;
 
 // set this to true to disable console colors
 var boring = false;
@@ -31,15 +32,27 @@ process.on('uncaughtException', function (err) {
 	_stepError.handler(_stepError.id, err);
 });
 
+// Load up env.js
+globSync(process.cwd() +'/features/**/env.js').forEach(function (env) {
+	require(env);
+});
+
 // Load up step definitions
 var stepDefs = [];
 try {
-	var stepDefFiles = fs.readdirSync(path.join(process.cwd(), 'features/step_definitions'));
-	stepDefFiles.forEach(function (file) {
-		if (file.match(/.js$/)) {
-			stepDefs = stepDefs.concat(require(path.join(process.cwd(), 'features/step_definitions', file)));
-		}
-	});
+	globSync(process.cwd() +'/features/**/*.js')
+		.filter(function(value) {
+			return !value.match(/\/env.js$/);
+		})
+		.forEach(function(file) {
+			var mod = require(file);
+			if (mod instanceof Array) {
+				var newDefs = mod.filter(function (item) {
+					return (item.operator) && (item.pattern instanceof RegExp) && (item.generator instanceof Function);
+				});
+				stepDefs = stepDefs.concat(newDefs);
+			}
+		});
 } catch (err) {
 }
 
