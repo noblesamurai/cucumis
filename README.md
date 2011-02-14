@@ -3,16 +3,21 @@
 Cucumis is a basic implementation of [cucumber's](http://cukes.info) [gherkin](https://github.com/aslakhellesoy/cucumber/wiki/gherkin) BDD plain-english testing language in node.js. 
 
 It was designed to meet the following criteria:
+
 - Run in node.js (cucumber only supports v8 currently and not the node.js commonjs package system)
 - Support asynchronous tests (cucumber only supports a synchronous system currently)
 
-It was built upon the gherkin parse [kyuri](https://github.com/nodejitsu/kyuri).
+It was built upon the gherkin parser [kyuri](https://github.com/nodejitsu/kyuri).
 
 ## Installation
 
 The easiest way to install cucumis is via the npm package manager:
 
 	npm install cucumis
+
+## Screencasts
+
+- see cucumis in action with some [web browser testing](http://screencast.com/t/AepofsIZ)
 
 ## Writing tests
 
@@ -58,7 +63,7 @@ You'll get the test results and a list of code snippets you'll need to implement
 
 	You can implement step definitions for undefined steps with these snippets:
 
-	var Steps = require('kyuri').Steps;
+	var Steps = require('cucumis').Steps;
 
 	Steps.Given(/^I have a calculator$/, function (done) {
 	  done();
@@ -75,6 +80,8 @@ You'll get the test results and a list of code snippets you'll need to implement
 	Steps.Then(/^the result should be (\d+) on the screen$/, function (done, arg1) {
 	  done();
 	});
+
+	Steps.export(module);
 
 Simply add the code snippets to a .js file (eg. addition.js) in the step_definitions folder beneath the features folder. For example:
 
