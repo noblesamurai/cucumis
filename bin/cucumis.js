@@ -68,6 +68,7 @@ var passedStepCount = 0;
 var passedScenarioCount = 0;
 
 var pendingStepCount = 0;
+var pendingScenarioCount = 0;
 
 var skippedStepCount = 0;
 
@@ -166,6 +167,7 @@ function printReportSummary() {
 	var passedScenariosStr = passedScenarioCount ? colorize('[green]{' + passedScenarioCount + ' passed}') : '';
 	var passedStepsStr = passedStepCount ? colorize('[green]{' + passedStepCount + ' passed}') : '';
 
+	var pendingScenariosStr = pendingScenarioCount ? colorize('[yellow]{' + pendingScenarioCount + ' pending}') : '';
 	var pendingStepsStr = pendingStepCount ? colorize('[yellow]{' + pendingStepCount + ' pending}') : '';
 
 	var skippedStepsStr = skippedStepCount ? colorize('[cyan]{' + skippedStepCount + ' skipped}') : '';
@@ -173,7 +175,7 @@ function printReportSummary() {
 	var failedScenariosStr = failedScenarioCount ? colorize('[red]{' + failedScenarioCount + ' failed}') : '';
 	var failedStepsStr = failedStepCount ? colorize('[red]{' + failedStepCount + ' failed}') : '';
 
-	console.log(scenarioCount + ' scenarios (' + strJoin(passedScenariosStr, failedScenariosStr, undefinedScenariosStr) + ')');
+	console.log(scenarioCount + ' scenarios (' + strJoin(passedScenariosStr, failedScenariosStr, undefinedScenariosStr, pendingScenariosStr) + ')');
 	console.log(stepCount + ' steps (' + strJoin(passedStepsStr, failedStepsStr, skippedStepsStr, undefinedStepsStr, pendingStepsStr) + ')');
 
 	var timeElapsed = (Date.now() - startTime)/1000;
