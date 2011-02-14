@@ -23,6 +23,20 @@ var fieldMap = {
 
 var lastSite;
 
+Steps.Runner.on('afterTest', function(done) {
+	if (browser) {
+		browser
+			.chain
+			.testComplete()
+			.end(function (err) {
+				if (err) throw err;
+				done();
+			});
+	} else {
+		done();
+	}
+});
+
 Steps.Given(/^I am using the "([^"]*)" browser$/, function (done, bt) {
 	browserType = bt;
 	browser = soda.createClient({

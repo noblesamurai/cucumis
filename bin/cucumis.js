@@ -124,6 +124,23 @@ function notifyListeners(eventName, cb, level) {
 				next();
 			}, 100);
 
+			_stepError.id = id;
+			_stepError.handler = function(id, err) {
+				responseOk = false;
+				clearTimeout(id);
+
+				var errors = [];
+				errors.push(err.name ? 'name: ' + err.name : '');
+				errors.push(err.message ? 'message: ' + err.message : '');
+				errors.push(err.stack ? indent(err.stack, 1) : '');
+
+				console.log(indent(colorize('red', 'Error while processing event: ' + eventName), level));
+				console.log(indent(colorize('red', errors.join('\n')), level + 1));
+
+				next();
+			};
+
+
 			listener(function() {
 				if (responseOk) {
 					clearTimeout(id);
