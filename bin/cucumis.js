@@ -85,8 +85,9 @@ function runFeatures() {
 	});
 }
 
-function notifyListeners(eventName, cb) {
-	var listeners = cucumis.Steps.Runner.listeners(eventName);
+function notifyListeners(eventName, cb, level) {
+	level = level || 1;
+	var listeners = _.clone(cucumis.Steps.Runner.listeners(eventName));
 	(function next() {
 		if (listeners.length) {
 			var listener = listeners.shift();
@@ -95,7 +96,7 @@ function notifyListeners(eventName, cb) {
 
 			var id = setTimeout(function() {
 				responseOk = false;
-				console.log(indent(colorize('red', 'Timeout waiting for response on event: ' + eventName + '\n'), 1));
+				console.log(indent(colorize('red', 'Timeout waiting for response on event: ' + eventName + '\n'), level));
 				next();
 			}, 100);
 
@@ -192,45 +193,46 @@ function runScenario(scenario, cb) {
 
 	console.log('Scenario' + (scenario.outline ? ' Outline' : '') + ': ' + scenario.name);
 
-	if (scenario.breakdown && scenario.breakdown.length) {
-		testState.lastStepType = 'GIVEN';
+	notifyListeners('beforeScenario', function() {
+		if (scenario.breakdown && scenario.breakdown.length) {
+			testState.lastStepType = 'GIVEN';
 
-		var exampleSets = [{}];
+			var exampleSets = [{}];
 
-		// Parse examples data
-		if (scenario.hasExamples) {
-			var examples = scenario.examples;
-			for (var exampleVar in examples) {
-				examples[exampleVar].forEach(function(exampleValue, index) {
-					if (!exampleSets[index]) {
-						exampleSets[index] = {};
-					} 
+			// Parse examples data
+			if (scenario.hasExamples) {
+				var examples = scenario.examples;
+				for (var exampleVar in examples) {
+					examples[exampleVar].forEach(function(exampleValue, index) {
+						if (!exampleSets[index]) {
+							exampleSets[index] = {};
+						} 
 
-					exampleSets[index][exampleVar] = exampleValue;
-				});
-			}
-		}
-
-		// Examples
-		(function next(){
-			if (exampleSets.length) {
-				runExampleSet(scenario, exampleSets.shift(), testState, next);
-			} else {
-				if (testState.scenarioUndefined) {
-					undefinedScenarioCount++;
+						exampleSets[index][exampleVar] = exampleValue;
+					});
 				}
+			}
 
-				if (testState.scenarioFailed) {
-					failedScenarioCount++;
+			// Examples
+			(function next(){
+				if (exampleSets.length) {
+					runExampleSet(scenario, exampleSets.shift(), testState, next);
 				} else {
-					passedScenarioCount++;
+					if (testState.scenarioUndefined) {
+						undefinedScenarioCount++;
+					}
+
+					if (testState.scenarioFailed) {
+						failedScenarioCount++;
+					} else {
+						passedScenarioCount++;
+					}
+
+					notifyListeners('afterScenario', cb);
 				}
-
-				cb();
-			}
-		})();
-	}
-
+			})();
+		}
+	});
 }
 
 function runExampleSet(scenario, exampleSet, testState, cb) {
@@ -247,7 +249,11 @@ function runExampleSet(scenario, exampleSet, testState, cb) {
 	(function next(){
 		if (steps.length) {
 			stepCount++;
-			runStep(steps.shift(), exampleSet, testState, next);
+			notifyListeners('beforeStep', function() {
+				runStep(steps.shift(), exampleSet, testState, function() {
+					notifyListeners('afterStep', next);
+				});
+			});
 		} else {
 			console.log('');
 			cb();
@@ -319,7 +325,6 @@ function runStep(step, exampleSet, testState, cb) {
 		}
 	})();
 }
-
 
 function runStepDef(stepDef, stepType, stepText, testState, cb) {
 	var matches;
