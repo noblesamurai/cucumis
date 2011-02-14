@@ -1,6 +1,6 @@
 {
 	"name"			: "cucumis",
-	"version"		: "v1.0.7",
+	"version"		: "v1.0.8",
 	"description"	: "BDD Cucumber Style Asynchronous Testing Framework for node.js",
 	"homepage"		: "https://github.com/noblesamurai/cucumis",
 	"keywords"		: ["testing", "bdd", "cucumber", "gherkin", "tests"],

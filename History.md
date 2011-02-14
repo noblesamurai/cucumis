@@ -1,4 +1,9 @@
 
+v1.0.8 / 2011-02-14 
+==================
+
+  * More robust error handling of before/after unhandledExceptions
+
 v1.0.7 / 2011-02-14 
 ==================
 
