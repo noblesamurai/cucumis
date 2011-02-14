@@ -140,7 +140,6 @@ function notifyListeners(eventName, cb, level) {
 				next();
 			};
 
-
 			listener(function() {
 				if (responseOk) {
 					clearTimeout(id);
