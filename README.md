@@ -65,20 +65,20 @@ You'll get the test results and a list of code snippets you'll need to implement
 
 	var Steps = require('cucumis').Steps;
 
-	Steps.Given(/^I have a calculator$/, function (done) {
-	  done();
+	Steps.Given(/^I have a calculator$/, function (ctx) {
+	  ctx.pending();
 	});
 
-	Steps.Given(/^I have entered (\d+) into the calculator$/, function (done, arg1) {
-	  done();
+	Steps.Given(/^I have entered (\d+) into the calculator$/, function (ctx, arg1) {
+	  ctx.pending();
 	});
 
-	Steps.When(/^I press add$/, function (done) {
-	  done();
+	Steps.When(/^I press add$/, function (ctx) {
+	  ctx.pending();
 	});
 
-	Steps.Then(/^the result should be (\d+) on the screen$/, function (done, arg1) {
-	  done();
+	Steps.Then(/^the result should be (\d+) on the screen$/, function (ctx, arg1) {
+	  ctx.pending();
 	});
 
 	Steps.export(module);
@@ -112,26 +112,26 @@ Simply add the code snippets to a .js file (eg. addition.js) in the step_definit
 
 	var calc;
 
-	Steps.Given(/^I have a calculator$/, function(done) {
+	Steps.Given(/^I have a calculator$/, function(ctx) {
 		calc = new Calculator();
 		setTimeout(function() {
-			done();
+			ctx.done();
 		}, 10);
 	});
 
-	Steps.Given(/^I have entered (\d+) into the calculator$/, function (done, value) {
+	Steps.Given(/^I have entered (\d+) into the calculator$/, function (ctx, value) {
 		calc.enter(parseInt(value));
-		done();
+		ctx.done();
 	});
 
-	Steps.When(/^I press add$/, function (done) {
+	Steps.When(/^I press add$/, function (ctx) {
 		calc.add();
-		done();
+		ctx.done();
 	});
 
-	Steps.Then(/^the result should be (\d+) on the screen$/, function (done, value) {
+	Steps.Then(/^the result should be (\d+) on the screen$/, function (ctx, value) {
 		assert.equal(calc.result(), parseInt(value));
-		done();
+		ctx.done();
 	});
 
 	Steps.export(module);
@@ -156,10 +156,10 @@ Then run cucumis again:
 
 You can perform asynchronous tests like:
 
-	Steps.Given(/^I have a calculator$/, function(done) {
+	Steps.Given(/^I have a calculator$/, function(ctx) {
 		calc = new Calculator();
 		setTimeout(function() {
-			done();
+			ctx.done();
 		}, 10);
 	});
 
@@ -167,8 +167,6 @@ And by default, each step will need to complete in under 2 seconds otherwise a t
 
 ## Todo
 
-- implement test step skipping
-- implement test step pending
 - implement background scenarios
 
 ## contributors
