@@ -3,16 +3,17 @@ Feature: Addition
 	As a math idiot
 	I want to be able to add up numbers
 
-	Scenario: Add two numbers
+	Background:
 		Given I have a calculator
-		And I have entered 50 into the calculator
+
+	Scenario: Add two numbers
+		Given I have entered 50 into the calculator
 		And I have entered 70 into the calculator
 		When I press add
 		Then the result should be 120 on the screen
 
 	Scenario: Add three numbers
-		Given I have a calculator
-		And I have entered 1 into the calculator
+		Given I have entered 1 into the calculator
 		And I have entered 2 into the calculator
 		And I have entered 3 into the calculator
 
@@ -23,13 +24,11 @@ Feature: Addition
 		Then the result should be 6 on the screen
 
 	Scenario: Return a single number
-		Given I have a calculator	
-		And I have entered 42 into the calculator
+		Given I have entered 42 into the calculator
 		Then the result should be 42 on the screen
 
 	Scenario Outline: Add some numbers
-		Given I have a calculator	
-		And I have entered <num1> into the calculator
+		Given I have entered <num1> into the calculator
 		And I have entered <num2> into the calculator
 		When I press add
 		Then the result should be <result> on the screen

@@ -206,6 +206,18 @@ function runFeature(featureFile, cb) {
 	for (var index in ast) {
 
 		if (ast[index]) {
+			// Extract background
+			var background = function(cb) {
+				cb();	
+			};
+
+			if (ast[index].background) {
+				ast[index].background.background = true;
+				background = function(cb) {
+					runScenario(ast[index].background, cb);
+				}
+			}
+
 			var feature = ast[index];
 
 			console.log('Feature: ' + feature.name);
@@ -218,13 +230,15 @@ function runFeature(featureFile, cb) {
 					var scenarios = feature.scenarios;
 
 					(function next(){
-						if (scenarios.length) {
-							runScenario(scenarios.shift(), function() {
-								notifyListeners('afterFeature', next);
-							});
-						} else {
-							cb();
-						}
+						background(function() {
+							if (scenarios.length) {
+								runScenario(scenarios.shift(), function() {
+									notifyListeners('afterFeature', next);
+								});
+							} else {
+								cb();
+							}
+						});
 					})();
 				}
 			});
@@ -242,7 +256,13 @@ function runScenario(scenario, cb) {
 		skip: false,
 	};
 
-	console.log('Scenario' + (scenario.outline ? ' Outline' : '') + ': ' + scenario.name);
+	if (scenario.background && !scenario.backgroundPrinted) {
+		console.log(indent('Background:', 1));
+		scenario.backgroundPrinted = true;
+	} else {
+		console.log(indent('Scenario' + (scenario.outline ? ' Outline' : '') + ': ' + scenario.name, 1));
+	}
+
 
 	notifyListeners('beforeScenario', function() {
 		if (scenario.breakdown && scenario.breakdown.length) {
@@ -378,9 +398,9 @@ function runStep(step, exampleSet, testState, cb) {
 				undefinedSteps[snippet] = true;
 			}
 
-			console.log(colorize(testState.color, '  ' + stepLine));
+			console.log(indent(colorize(testState.color, stepLine), 2));
 			if (testState.msg) {
-				console.log(indent(testState.msg, 2));
+				console.log(indent(testState.msg, 3));
 			}
 
 			cb();
@@ -455,7 +475,7 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 		var errors = [];
 		errors.push(err.name ? 'name: ' + err.name : '');
 		errors.push(err.message ? 'message: ' + err.message : '');
-		errors.push(err.stack ? indent(err.stack, 1) : '');
+		errors.push(err.stack ? indent(err.stack, 2) : '');
 		testState.msg = colorize('red', errors.join('\n'));
 
 		testState.color = 'red';
