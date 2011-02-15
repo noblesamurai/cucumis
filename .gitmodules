@@ -1,3 +1,0 @@
-[submodule "deps/kyuri"]
-	path = deps/kyuri
-	url = git://github.com/nodejitsu/kyuri.git
