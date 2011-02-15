@@ -1,4 +1,14 @@
 
+v1.0.10 / 2011-02-16 
+==================
+
+  * Stopped backgrounds running twice, and also fixed background printing
+  * Background scenario support
+  * Adding 'Background' Suport
+  * using our forked version of kyuri
+  * removing original kyuri repository
+  * Updated readme to reflect new API
+
 v1.0.9 / 2011-02-15 
 ==================
 
