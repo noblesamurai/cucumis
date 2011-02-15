@@ -46,7 +46,13 @@ Steps.Given(/^I am using the "([^"]*)" browser$/, function (ctx, bt) {
 	  , browser: browserType
 	});
 
-	ctx.done();
+	browser
+		.chain
+		.session()
+		.end(function(err) {
+			if (err) throw err;
+			ctx.done();
+		});
 });
 
 Steps.Given(/^I am on the "([^"]*?)" "([^"]*?)" page$/, function (ctx, site, page) {
@@ -55,9 +61,9 @@ Steps.Given(/^I am on the "([^"]*?)" "([^"]*?)" page$/, function (ctx, site, pag
 
 	browser
 		.chain
-		.session()
 		.open(url)
 		.end(function(err) {
+			if (err) throw err;
 			ctx.done();
 		});
 });
@@ -67,6 +73,7 @@ Steps.When(/^I enter "([^"]*?)" into the "([^"]*?)" text field$/, function (ctx,
 		.chain
 		.type(fieldMap[lastSite][field], text)
 		.end(function(err) {
+			if (err) throw err;
 			ctx.done();
 		});
 });
@@ -78,6 +85,7 @@ Steps.When(/^I click the "([^"]*?)" "([^"]*?)" button$/, function (ctx, site, fi
 		.click(fieldMap[site][field])
 		.waitForPageToLoad(2000)
 		.end(function(err) {
+			if (err) throw err;
 			ctx.done();
 		});
 });

@@ -214,7 +214,10 @@ function runFeature(featureFile, cb) {
 			if (ast[index].background) {
 				ast[index].background.background = true;
 				background = function(cb) {
-					runScenario(ast[index].background, cb);
+					runScenario(ast[index].background, function () {
+						ast[index].background.backgroundPrinted = true;
+						cb();
+					});
 				}
 			}
 
@@ -230,15 +233,15 @@ function runFeature(featureFile, cb) {
 					var scenarios = feature.scenarios;
 
 					(function next(){
-						background(function() {
 							if (scenarios.length) {
-								runScenario(scenarios.shift(), function() {
-									notifyListeners('afterFeature', next);
+								background(function() {
+									runScenario(scenarios.shift(), function() {
+										notifyListeners('afterFeature', next);
+									});
 								});
 							} else {
 								cb();
 							}
-						});
 					})();
 				}
 			});
@@ -256,15 +259,17 @@ function runScenario(scenario, cb) {
 		skip: false,
 	};
 
-	if (scenario.background && !scenario.backgroundPrinted) {
-		console.log(indent('Background:', 1));
-		scenario.backgroundPrinted = true;
+	var notifyEventType = 'Scenario';
+	if (scenario.background) {
+		if (!scenario.backgroundPrinted) {
+			console.log(indent('Background:', 1));
+		}
+		notifyEventType = 'Background';
 	} else {
 		console.log(indent('Scenario' + (scenario.outline ? ' Outline' : '') + ': ' + scenario.name, 1));
 	}
 
-
-	notifyListeners('beforeScenario', function() {
+	notifyListeners('before' + notifyEventType, function() {
 		if (scenario.breakdown && scenario.breakdown.length) {
 			testState.lastStepType = 'GIVEN';
 
@@ -310,7 +315,7 @@ function runScenario(scenario, cb) {
 						}
 					}
 
-					notifyListeners('afterScenario', cb);
+					notifyListeners('after' + notifyEventType, cb);
 				}
 			})();
 		}
@@ -332,18 +337,20 @@ function runExampleSet(scenario, exampleSet, testState, cb) {
 		if (steps.length) {
 			stepCount++;
 			notifyListeners('beforeStep', function() {
-				runStep(steps.shift(), exampleSet, testState, function() {
+				runStep(scenario, steps.shift(), exampleSet, testState, function() {
 					notifyListeners('afterStep', next);
 				});
 			});
 		} else {
-			console.log('');
+			if (!scenario.background || (scenario.background && !scenario.backgroundPrinted)) {
+				console.log('');
+			}
 			cb();
 		}
 	})();
 }
 
-function runStep(step, exampleSet, testState, cb) {
+function runStep(scenario, step, exampleSet, testState, cb) {
 	var stepType = step[0];
 	if (step[0] == 'AND') {
 		stepType = testState.lastStepType;
@@ -398,7 +405,10 @@ function runStep(step, exampleSet, testState, cb) {
 				undefinedSteps[snippet] = true;
 			}
 
-			console.log(indent(colorize(testState.color, stepLine), 2));
+			if (!scenario.background || (scenario.background && !scenario.backgroundPrinted)) {
+				console.log(indent(colorize(testState.color, stepLine), 2));
+			}
+
 			if (testState.msg) {
 				console.log(indent(testState.msg, 3));
 			}
