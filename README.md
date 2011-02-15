@@ -165,10 +165,6 @@ You can perform asynchronous tests like:
 
 And by default, each step will need to complete in under 2 seconds otherwise a timeout error will be thrown.
 
-## Todo
-
-- implement background scenarios
-
 ## contributors
  - [Eugene Ware](http://eugeneware.com)
  - [kyuri](https://github.com/nodejitsu/kyuri)
