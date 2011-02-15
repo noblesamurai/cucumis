@@ -352,7 +352,7 @@ function runExampleSet(scenario, exampleSet, testState, cb) {
 
 function runStep(scenario, step, exampleSet, testState, cb) {
 	var stepType = step[0];
-	if (step[0] == 'AND') {
+	if (step[0] == 'AND' || step[0] == 'BUT') {
 		stepType = testState.lastStepType;
 	}
 	testState.lastStepType = stepType;

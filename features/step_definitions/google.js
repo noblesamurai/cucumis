@@ -102,4 +102,16 @@ Steps.Then(/^my title should contain "([^"]*?)"$/, function (ctx, needle) {
 		});
 });
 
+Steps.Then(/^my title shouldn't contain "([^"]*?)"$/, function (ctx, needle) {
+	browser
+		.chain
+		.getTitle(function(title){
+			title.should.not.include.string(needle);
+		})
+		.end(function(err) {
+			if (err) throw err;
+			ctx.done();
+		});
+});
+
 Steps.export(module);

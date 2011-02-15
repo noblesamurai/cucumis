@@ -13,3 +13,4 @@ Feature: Search Google
 		And I click the "Google" "Search" button
 
 		Then my title should contain "Hello World"
+		But my title shouldn't contain "Pygmies"
