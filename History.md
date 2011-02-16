@@ -1,4 +1,11 @@
 
+v1.0.15 / 2011-02-16 
+==================
+
+  * Start using cucumis to test cucumis
+  * Move examples to examples folder
+  * fixed reference bug
+
 v1.0.14 / 2011-02-16 
 ==================
 
