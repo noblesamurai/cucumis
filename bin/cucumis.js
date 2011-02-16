@@ -281,61 +281,58 @@ function runScenario(background, scenario, cb) {
 		skip: false,
 	};
 
-	var notifyEventType = 'Scenario';
-	if (background) {
-		notifyEventType = 'Background';
+	if (scenario.outline && !scenario.background) {
+		formatter.beforeScenarioOutline(scenario);
 	}
 
-	notifyListeners('before' + notifyEventType, function() {
-		if (scenario.breakdown && scenario.breakdown.length) {
-			testState.lastStepType = 'GIVEN';
+	if (scenario.breakdown && scenario.breakdown.length) {
+		testState.lastStepType = 'GIVEN';
 
-			var exampleSets = [{}];
+		var exampleSets = [{}];
 
-			// Parse examples data
-			if (scenario.hasExamples) {
-				var examples = scenario.examples;
-				for (var exampleVar in examples) {
-					examples[exampleVar].forEach(function(exampleValue, index) {
-						if (!exampleSets[index]) {
-							exampleSets[index] = {};
-						} 
+		// Parse examples data
+		if (scenario.hasExamples) {
+			var examples = scenario.examples;
+			for (var exampleVar in examples) {
+				examples[exampleVar].forEach(function(exampleValue, index) {
+					if (!exampleSets[index]) {
+						exampleSets[index] = {};
+					} 
 
-						exampleSets[index][exampleVar] = exampleValue;
-					});
+					exampleSets[index][exampleVar] = exampleValue;
+				});
+			}
+		}
+
+		// Examples
+		(function next(){
+			testState.skip = false;
+
+			if (exampleSets.length) {
+				background(function() {
+					if (!scenario.background) {
+						formatter.beforeScenario(scenario);
+						notifyListeners('beforeScenario', function() {
+							runExampleSet(scenario, exampleSets.shift(), testState, next);
+						});
+					} else {
+						runExampleSet(scenario, exampleSets.shift(), testState, next);
+					}
+				});
+			} else {
+				if (testState.scenarioUndefined) {
+					formatter.undefinedScenarioCount++;
+				}
+
+				if (!scenario.background) {
+					formatter.afterScenario(scenario);
+					notifyListeners('afterScenario', cb);
+				} else {
+					cb();
 				}
 			}
-
-			// Examples
-			(function next(){
-				testState.skip = false;
-
-				if (exampleSets.length) {
-					background(function() {
-						if (!scenario.background) {
-							formatter.beforeScenario(scenario);
-							notifyListeners('beforeScenario', function() {
-								runExampleSet(scenario, exampleSets.shift(), testState, next);
-							});
-						} else {
-							runExampleSet(scenario, exampleSets.shift(), testState, next);
-						}
-					});
-				} else {
-					if (testState.scenarioUndefined) {
-						formatter.undefinedScenarioCount++;
-					}
-
-					if (!scenario.background) {
-						formatter.afterScenario(scenario);
-						notifyListeners('afterScenario', cb);
-					} else {
-						cb();
-					}
-				}
-			})();
-		}
-	});
+		})();
+	}
 }
 
 function runExampleSet(scenario, exampleSet, testState, cb) {
