@@ -1,4 +1,14 @@
 
+v1.0.16 / 2011-02-16 
+==================
+
+  * Added more property assertions
+  * Corrected bug with backgrounds only running once for Scenario outlines
+  * got passedScenarioCount to match
+  * fixed scenario count
+  * Asserting basic functionality
+  * tabify for easy copy and paste
+
 v1.0.15 / 2011-02-16 
 ==================
 
