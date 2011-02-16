@@ -4,10 +4,10 @@ var cucumis = require('../lib/cucumis'),
     path = require('path'),
     fs = require('fs'),
 	_ = require('underscore'),
-	globSync = require('glob').globSync;
-
-// set this to true to disable console colors
-var boring = false;
+	globSync = require('glob').globSync,
+	colorizelib = require('../lib/support/colorize'),
+	colorize = colorizelib.colorize,
+	indent = require('../lib/support/indent');
 
 // test timeout
 var timeout = 5000;
@@ -35,149 +35,7 @@ RegExp.escape = function(str)
   return str.replace(specials, "\\$&");
 }
 
-// Format printing object
-
-function Formatter() {
-	this.undefinedSteps = {};
-
-	this.scenarioCount = 0;
-
-	this.stepCount = 0;
-
-	this.undefinedStepCount = 0;
-	this.undefinedScenarioCount = 0;
-
-	this.passedStepCount = 0;
-	this.passedScenarioCount = 0;
-
-	this.pendingStepCount = 0;
-	this.pendingScenarioCount = 0;
-
-	this.skippedStepCount = 0;
-
-	this.failedStepCount = 0;
-	this.failedScenarioCount = 0;
-	this.startTime = Date.now();
-}
-
-Formatter.prototype = {
-
-	generalUncaughtException: function(err) {
-		var errors = [];
-		errors.push(err.name ? 'name: ' + err.name : '');
-		errors.push(err.message ? 'message: ' + err.message : '');
-		errors.push(err.stack ? indent(err.stack, 1) : '');
-
-		console.log(indent(colorize('red', 'Error caught:')));
-		console.log(indent(colorize('red', errors.join('\n')), 2));
-	},
-
-	asyncStepTimeoutError: function(eventName, level, err) {
-		if (err) {
-			var errors = [];
-			errors.push(err.name ? 'name: ' + err.name : '');
-			errors.push(err.message ? 'message: ' + err.message : '');
-			errors.push(err.stack ? indent(err.stack, 1) : '');
-
-			console.log(indent(colorize('red', 'Error while processing event: ' + eventName), level));
-			console.log(indent(colorize('red', errors.join('\n')), level + 1));
-		} else {
-			console.log(indent(colorize('red', 'Timeout waiting for response on event: ' + eventName + '\n'), level));
-		}
-	},
-
-	beforeFeature: function(feature) {
-		console.log('Feature: ' + feature.name);
-		console.log(indent(feature.description, 1));
-	},
-
-	afterFeature: function(feature) {
-	},
-
-	beforeScenario: function(scenario) {
-		console.log(indent('Scenario' + (scenario.outline ? ' Outline' : '') + ': ' + scenario.name, 1));
-	},
-
-	afterScenario: function(scenario) {
-	},
-
-	beforeBackground: function(scenario) {
-		if (!scenario.backgroundPrinted) {
-			console.log(indent('Background:', 1));
-		}
-	},
-
-	afterBackground: function(scenario) {
-	},
-
-	beforeStep: function(step) {
-	},
-
-	afterStep: function(step) {
-	},
-
-	afterSteps: function(scenario) {
-		if (!scenario.background || (scenario.background && !scenario.backgroundPrinted)) {
-			console.log('');
-		}
-	},
-
-	afterStepResult: function(scenario, stepLine, result, msg) {
-		var colorMap = {
-			'pass': 'green',
-			'fail': 'red',
-			'pending': 'yellow',
-			'skipped': 'cyan',
-			'undefined': 'yellow',
-		};
-
-		if (!scenario.background || (scenario.background && !scenario.backgroundPrinted)) {
-			console.log(indent(colorize(colorMap[result], stepLine), 2));
-		}
-
-		if (msg) {
-			console.log(indent(colorize(colorMap[result], msg), 3));
-		}
-	},
-
-	afterTest: function() {
-		var undefinedScenariosStr = this.undefinedScenarioCount ? colorize('[yellow]{' + this.undefinedScenarioCount + ' undefined}') : '';
-		var undefinedStepsStr = this.undefinedStepCount ? colorize('[yellow]{' + this.undefinedStepCount + ' undefined}') : '';
-
-		var passedScenariosStr = this.passedScenarioCount ? colorize('[green]{' + this.passedScenarioCount + ' passed}') : '';
-		var passedStepsStr = this.passedStepCount ? colorize('[green]{' + this.passedStepCount + ' passed}') : '';
-
-		var pendingScenariosStr = this.pendingScenarioCount ? colorize('[yellow]{' + this.pendingScenarioCount + ' pending}') : '';
-		var pendingStepsStr = this.pendingStepCount ? colorize('[yellow]{' + this.pendingStepCount + ' pending}') : '';
-
-		var skippedStepsStr = this.skippedStepCount ? colorize('[cyan]{' + this.skippedStepCount + ' skipped}') : '';
-
-		var failedScenariosStr = this.failedScenarioCount ? colorize('[red]{' + this.failedScenarioCount + ' failed}') : '';
-		var failedStepsStr = this.failedStepCount ? colorize('[red]{' + this.failedStepCount + ' failed}') : '';
-
-		console.log(this.scenarioCount + ' scenarios (' + strJoin(passedScenariosStr, failedScenariosStr, undefinedScenariosStr, pendingScenariosStr) + ')');
-		console.log(this.stepCount + ' steps (' + strJoin(passedStepsStr, failedStepsStr, skippedStepsStr, undefinedStepsStr, pendingStepsStr) + ')');
-
-		var timeElapsed = (Date.now() - this.startTime)/1000;
-
-		var minutes = Math.floor(timeElapsed / 60);
-		var seconds = timeElapsed - minutes*60;
-
-		console.log(minutes + 'm' + seconds.toFixed(3) + 's');
-		console.log();
-
-		if (_.keys(this.undefinedSteps).length) {
-			console.log(colorize('[yellow]{You can implement step definitions for undefined steps with these snippets:\n}'));
-			console.log(colorize('yellow', 'var Steps = require(\'cucumis\').Steps;\n'));
-
-			for (var undefinedStep in formatter.undefinedSteps) {
-				console.log(colorize('yellow', undefinedStep));
-			}
-
-			console.log(colorize('yellow', 'Steps.export(module);\n'));
-		}
-	},
-};
+var Formatter = require('../lib/formatters/basic.formatter').Formatter;
 
 var formatter = new Formatter();
 
@@ -185,6 +43,7 @@ process.on('uncaughtException', function (err) {
 	if (_stepError.id) {
 		_stepError.handler(_stepError.id, err);
 	} else {
+		console.log(err);
 		formatter.generalUncaughtException(err);
 	}
 });
@@ -219,7 +78,7 @@ function processCmdLine() {
 				break;
 			case '-b':
 			case '--boring':
-				boring = true;
+				colorizelib.boring = true;
 				break;
 			default:
 				path = arg;
@@ -265,15 +124,9 @@ try {
 				stepDefs = stepDefs.concat(newDefs);
 			}
 		});
-} catch (err) {
-}
-
+} catch (err) {}
 
 runFeatures(runPath, runPattern);
-
-function strJoin() {
-	return _.compact(arguments).join(', ');;
-}
 
 function runFeatures(runPath, runPattern) {
 	var paths = [path.resolve(process.cwd(), runPath), path.resolve(process.cwd(), runPath, 'features')];
@@ -656,48 +509,6 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 	}
 
 	cb();
-}
-
-/**
- * Colorize the given string using ansi-escape sequences.
- * Disabled when --boring is set.
- *
- * @param {String} str
- * @return {String}
- */
-
-function colorize(color, str){
-	var colors = { bold: 1, red: 31, green: 32, yellow: 33, blue: 34, magenta: 35, cyan: 36 };
-	if (arguments.length == 1) {
-		str = color;
-		return str.replace(/\[(\w+)\]\{([^]*?)\}/g, function(_, color, str){
-			return boring
-				? str
-				: '\x1B[' + colors[color] + 'm' + str + '\x1B[0m';
-		});
-	} else {
-		return boring
-			? str
-			: '\x1B[' + colors[color] + 'm' + str + '\x1B[0m';
-	}
-}
-
-
-function indent (text, level) {
-	level = level || 0;
-
-	var lines = text.split('\n');
-
-	var indents = '';
-	_.range(level).forEach(function() {
-		indents += '  ';
-	});
-
-	for (var i = 0; i < lines.length; i++) {
-		lines[i] = indents + lines[i]; 
-	}
-
-	return lines.join('\n');
 }
 
 /**
