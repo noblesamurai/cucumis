@@ -316,23 +316,6 @@ function runScenario(scenario, cb) {
 				} else {
 					if (testState.scenarioUndefined) {
 						formatter.undefinedScenarioCount++;
-					} else {
-						if (scenario.background) {
-							switch (testState.scenarioState) {
-								case 'failed':
-									formatter.failedScenarioCount++;
-									break;
-
-								case 'pending':
-									formatter.pendingScenarioCount++;
-									break;
-
-								case 'passed':
-									formatter.passedScenarioCount++;
-									break;
-									
-							}
-						}
 					}
 
 					if (notifyEventType == 'Background') {
@@ -348,6 +331,8 @@ function runScenario(scenario, cb) {
 }
 
 function runExampleSet(scenario, exampleSet, testState, cb) {
+	testState.scenarioState = 'passed';
+
 	if (!scenario.background) {
 		formatter.scenarioCount++;
 	}
@@ -377,6 +362,23 @@ function runExampleSet(scenario, exampleSet, testState, cb) {
 				});
 			});
 		} else {
+			if (!scenario.background) {
+				switch (testState.scenarioState) {
+					case 'failed':
+						formatter.failedScenarioCount++;
+						break;
+
+					case 'pending':
+						formatter.pendingScenarioCount++;
+						break;
+
+					case 'passed':
+						formatter.passedScenarioCount++;
+						break;
+						
+				}
+			}
+
 			notifyListeners('afterSteps', function() {
 				formatter.afterSteps(scenario);
 				cb();
