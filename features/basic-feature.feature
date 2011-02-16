@@ -8,8 +8,12 @@ Feature: Run basic features
 		Then there should be no executable errors
 		And the "Total Errors" should be 0
 		And the "Number of Features" should be 1
+
 		And the "Scenario Count" should be 5
 		And the "Passed Scenario Count" should be 5
+		And the "Failed Scenario Count" should be 0
+
+		And the "Step Count" should be 26
 
 		When I select the Feature "Addition"
 		Then the feature's "name" should be "Addition"

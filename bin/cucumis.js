@@ -232,10 +232,12 @@ function runFeature(featureFile, cb) {
 				cb();	
 			};
 
+			var _background = background;
+
 			if (ast[index].background) {
 				ast[index].background.background = true;
 				background = function(cb) {
-					runScenario(ast[index].background, function () {
+					runScenario(_background, ast[index].background, function () {
 						ast[index].background.backgroundPrinted = true;
 						cb();
 					});
@@ -247,16 +249,13 @@ function runFeature(featureFile, cb) {
 			formatter.beforeFeature(feature);
 
 			notifyListeners('beforeFeature', function() {
-
 				if (feature.scenarios && feature.scenarios.length) {
 					// Scenarios
 					var scenarios = feature.scenarios;
 
 					(function next(){
 							if (scenarios.length) {
-								background(function() {
-									runScenario(scenarios.shift(), next);
-								});
+								runScenario(background, scenarios.shift(), next);
 							} else {
 								notifyListeners('afterFeature', function() {
 									formatter.afterFeature(feature);
@@ -270,7 +269,7 @@ function runFeature(featureFile, cb) {
 	}
 }
 
-function runScenario(scenario, cb) {
+function runScenario(background, scenario, cb) {
 	var testState = {
 		scenarioState: 'passed',
 		scenarioUndefined: false,
@@ -312,7 +311,9 @@ function runScenario(scenario, cb) {
 				testState.skip = false;
 
 				if (exampleSets.length) {
-					runExampleSet(scenario, exampleSets.shift(), testState, next);
+					background(function() {
+						runExampleSet(scenario, exampleSets.shift(), testState, next);
+					});
 				} else {
 					if (testState.scenarioUndefined) {
 						formatter.undefinedScenarioCount++;
@@ -349,12 +350,12 @@ function runExampleSet(scenario, exampleSet, testState, cb) {
 
 	(function next(){
 		if (steps.length) {
-			formatter.stepCount++;
 			var step = steps.shift();
 			formatter.beforeStep(step);
 
 			notifyListeners('beforeStep', function() {
 				runStep(scenario, step, exampleSet, testState, function() {
+					formatter.stepCount++;
 					notifyListeners('afterStep', function() {
 						formatter.afterStep(step);
 						next();

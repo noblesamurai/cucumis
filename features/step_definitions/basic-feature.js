@@ -44,6 +44,12 @@ var testMap = {
 	'Passed Scenario Count': function() {
 		return testResults.stats.passedScenarioCount;
 	},
+	'Failed Scenario Count': function() {
+		return testResults.stats.failedScenarioCount;
+	},
+	'Step Count': function() {
+		return testResults.stats.stepCount;
+	},
 };
 
 var featureMap = {
