@@ -28,19 +28,81 @@ var _stepError = {
 	},
 };
 
+// escapes regexs
+RegExp.escape = function(str)
+{
+  var specials = new RegExp("[.*+?|()\\[\\]{}\\\\]", "g"); // .*+?|()[]{}\
+  return str.replace(specials, "\\$&");
+}
+
 process.on('uncaughtException', function (err) {
-	_stepError.handler(_stepError.id, err);
+	if (_stepError.id) {
+		_stepError.handler(_stepError.id, err);
+	} else {
+		var errors = [];
+		errors.push(err.name ? 'name: ' + err.name : '');
+		errors.push(err.message ? 'message: ' + err.message : '');
+		errors.push(err.stack ? indent(err.stack, 1) : '');
+
+		console.log(indent(colorize('red', 'Error caught:')));
+		console.log(indent(colorize('red', errors.join('\n')), 2));
+	}
 });
 
+function processCmdLine() {
+	var usage = colorize(''
+	  + '[bold]{Usage}: cucumis [options] [path]\n'
+	  + '\n'
+	  + '[bold]{Exmample}\n'
+	  + 'cucumis examples/features\n'
+	  + '\n'
+	  + '[bold]{Options}:\n'
+	  + '  -h, --help             Output help information\n'
+	  );
+
+	// Parse arguments
+	var args = process.argv.slice(2)
+	  , path = null;
+
+	while (args.length) {
+	  var arg = args.shift();
+	  switch (arg) {
+		case '-h':
+		case '--help':
+		  abort(usage);
+		  break;
+		default:
+			path = arg;
+	  }
+	}
+
+	return path;
+}
+
+var runPath = processCmdLine();
+
+if (runPath === null) {
+	runPath = 'features';
+}
+
+var runPattern = '\.feature$';
+
+var stat = fs.statSync(path.resolve(process.cwd(), runPath));
+if (stat.isFile()) {
+	var filePath = path.resolve(process.cwd(), runPath);
+	runPattern = RegExp.escape('^' + filePath + '$');
+	runPath = path.dirname(filePath);
+}
+
 // Load up env.js
-globSync(process.cwd() +'/features/**/env.js').forEach(function (env) {
+globSync(path.resolve(process.cwd(), runPath, '**/env.js')).forEach(function (env) {
 	require(env);
 });
 
 // Load up step definitions
 var stepDefs = [];
 try {
-	globSync(process.cwd() +'/features/**/*.js')
+	globSync(path.resolve(process.cwd(), runPath, '**/*.js'))
 		.filter(function(value) {
 			return !value.match(/\/env.js$/);
 		})
@@ -76,32 +138,39 @@ var failedStepCount = 0;
 var failedScenarioCount = 0;
 var startTime = Date.now();
 
-runFeatures();
+runFeatures(runPath, runPattern);
 
 function strJoin() {
 	return _.compact(arguments).join(', ');;
 }
 
-function runFeatures() {
-	var paths = [path.join(process.cwd(), 'features')];
+function runFeatures(runPath, runPattern) {
+	var paths = [path.resolve(process.cwd(), runPath), path.resolve(process.cwd(), runPath, 'features')];
 	var p;
 
 	var features = [];
+	var reRunPattern = new RegExp(runPattern);
 
 	while (p = paths.shift()) {
 
-		var files = fs.readdirSync(p);
+		try {
+			var files = fs.readdirSync(p); 
+			// find features
+			files
+				.filter(function(f) { return path.join(p, f).match(reRunPattern) })
+				.filter(function(f) { return fs.statSync(path.join(p, f)).isFile() })
+				.forEach(function(f) { features.push(path.join(p, f)) });
 
-		// find features
-		files
-			.filter(function(f) { return f.match(/.feature$/) })
-			.forEach(function (f) { features.push(path.join(p, f)) });
+			// find more directories to traverse
+			files
+				.filter(function(f) { return fs.statSync(path.join(p, f)).isDirectory() })
+				.forEach(function(f) { paths.push(path.join(p, f)) });
+		} catch (err) {
+			// ignore files that don't exist
+		}
+	}
 
-		// find more directories to traverse
-		files
-			.filter(function(f) { return fs.statSync(path.join(p, f)).isDirectory(); })
-			.forEach(function (f) { paths.push(path.join(p, f)) });
-	};
+	features = _(features).uniq();
 
 	notifyListeners('beforeTest', function() {
 		(function next(){
@@ -540,3 +609,15 @@ function indent (text, level) {
 
 	return lines.join('\n');
 }
+
+/**
+ * Exit with the given `str`.
+ *
+ * @param {String} str
+ */
+
+function abort(str) {
+  console.error(str);
+  process.exit(1);
+}
+
