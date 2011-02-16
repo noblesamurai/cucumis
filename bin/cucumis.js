@@ -28,7 +28,6 @@ RegExp.escape = function(str)
   return str.replace(specials, "\\$&");
 }
 
-
 function processCmdLine() {
 	var usage = colorize(''
 		+ '[bold]{Usage}: cucumis [options] [path]\n'
@@ -97,8 +96,11 @@ var _stepError = {
 process.on('uncaughtException', function (err) {
 	if (_stepError.id) {
 		_stepError.handler(_stepError.id, err);
-	} else {
+	} else if (formatter) {
 		formatter.generalUncaughtException(err);
+	} else {
+		console.error(str);
+		process.exit(1);
 	}
 });
 
