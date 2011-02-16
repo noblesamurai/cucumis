@@ -1,4 +1,14 @@
 
+v1.0.14 / 2011-02-16 
+==================
+
+  * JSON formatter
+  * print out errors if the formatter fails
+  * Moved error message creation into formatter
+  * can now choose formatter via command line option
+  * Move formatter into an external file
+  * refactoring counters into formatter object
+
 v1.0.13 / 2011-02-16 
 ==================
 
