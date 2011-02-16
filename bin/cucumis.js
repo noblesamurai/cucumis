@@ -271,8 +271,6 @@ function runFeature(featureFile, cb) {
 }
 
 function runScenario(scenario, cb) {
-	formatter.scenarioCount++;
-
 	var testState = {
 		scenarioState: 'passed',
 		scenarioUndefined: false,
@@ -319,19 +317,21 @@ function runScenario(scenario, cb) {
 					if (testState.scenarioUndefined) {
 						formatter.undefinedScenarioCount++;
 					} else {
-						switch (testState.scenarioState) {
-							case 'failed':
-								formatter.failedScenarioCount++;
-								break;
+						if (scenario.background) {
+							switch (testState.scenarioState) {
+								case 'failed':
+									formatter.failedScenarioCount++;
+									break;
 
-							case 'pending':
-								formatter.pendingScenarioCount++;
-								break;
+								case 'pending':
+									formatter.pendingScenarioCount++;
+									break;
 
-							case 'passed':
-								formatter.passedScenarioCount++;
-								break;
-								
+								case 'passed':
+									formatter.passedScenarioCount++;
+									break;
+									
+							}
 						}
 					}
 
@@ -348,6 +348,10 @@ function runScenario(scenario, cb) {
 }
 
 function runExampleSet(scenario, exampleSet, testState, cb) {
+	if (!scenario.background) {
+		formatter.scenarioCount++;
+	}
+
 	// Steps
 	var steps = [];
 	scenario.breakdown.forEach(function(breakdown) {
