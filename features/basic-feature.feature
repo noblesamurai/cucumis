@@ -12,8 +12,17 @@ Feature: Run basic features
 		And the "Scenario Count" should be 5
 		And the "Passed Scenario Count" should be 5
 		And the "Failed Scenario Count" should be 0
+		And the "Pending Scenario Count" should be 0
+		And the "Undefined Scenario Count" should be 0
 
 		And the "Step Count" should be 26
+		And the "Passed Step Count" should be 26
+		And the "Failed Step Count" should be 0
+		And the "Skipped Step Count" should be 0
+		And the "Pending Step Count" should be 0
+		And the "Undefined Step Count" should be 0
+
+		And the "Elapsed Time" should be greater than 0
 
 		When I select the Feature "Addition"
 		Then the feature's "name" should be "Addition"

@@ -47,8 +47,32 @@ var testMap = {
 	'Failed Scenario Count': function() {
 		return testResults.stats.failedScenarioCount;
 	},
+	'Undefined Scenario Count': function() {
+		return testResults.stats.undefinedScenarioCount;
+	},
+	'Pending Scenario Count': function() {
+		return testResults.stats.pendingScenarioCount;
+	},
 	'Step Count': function() {
 		return testResults.stats.stepCount;
+	},
+	'Passed Step Count': function() {
+		return testResults.stats.passedStepCount;
+	},
+	'Failed Step Count': function() {
+		return testResults.stats.failedStepCount;
+	},
+	'Skipped Step Count': function() {
+		return testResults.stats.skippedStepCount;
+	},
+	'Pending Step Count': function() {
+		return testResults.stats.pendingStepCount;
+	},
+	'Undefined Step Count': function() {
+		return testResults.stats.undefinedStepCount;
+	},
+	'Elapsed Time': function() {
+		return testResults.stats.elapsedTime;
 	},
 };
 
@@ -79,6 +103,18 @@ var stepMap = {
 	},
 };
 
+var opMap = {
+	'greater than': function() {
+		return Object.prototype.should.above;
+	},
+	'less than': function() {
+		return Object.prototype.should.below;
+	},
+	'equal to': function() {
+		return Object.prototype.should.eql;
+	},
+};
+
 Steps.When(/^I run cucumis against the file "([^"]*?)"$/, function (ctx, file) {
 	runCucumis(file, function(results) {
 		executableResults = results;
@@ -89,6 +125,13 @@ Steps.When(/^I run cucumis against the file "([^"]*?)"$/, function (ctx, file) {
 
 Steps.Then(/^the "([^"]*?)" should be (\d+)$/, function (ctx, attr, value) {
 	testMap[attr]().should.eql(parseInt(value));
+	ctx.done();
+});
+
+Steps.Then(/^the "([^"]*?)" should be (greater than|less than|equal to) (\d+)$/, function (ctx, attr, op, value) {
+	var fn = opMap[op]();
+	var subject = testMap[attr]().should;
+	fn.call(subject, parseInt(value));
 	ctx.done();
 });
 
