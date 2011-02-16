@@ -36,7 +36,32 @@ RegExp.escape = function(str)
 }
 
 // Format printing object
-var formatter = {
+
+function Formatter() {
+	this.undefinedSteps = {};
+
+	this.scenarioCount = 0;
+
+	this.stepCount = 0;
+
+	this.undefinedStepCount = 0;
+	this.undefinedScenarioCount = 0;
+
+	this.passedStepCount = 0;
+	this.passedScenarioCount = 0;
+
+	this.pendingStepCount = 0;
+	this.pendingScenarioCount = 0;
+
+	this.skippedStepCount = 0;
+
+	this.failedStepCount = 0;
+	this.failedScenarioCount = 0;
+	this.startTime = Date.now();
+}
+
+Formatter.prototype = {
+
 	generalUncaughtException: function(err) {
 		var errors = [];
 		errors.push(err.name ? 'name: ' + err.name : '');
@@ -116,24 +141,24 @@ var formatter = {
 	},
 
 	afterTest: function() {
-		var undefinedScenariosStr = undefinedScenarioCount ? colorize('[yellow]{' + undefinedScenarioCount + ' undefined}') : '';
-		var undefinedStepsStr = undefinedStepCount ? colorize('[yellow]{' + undefinedStepCount + ' undefined}') : '';
+		var undefinedScenariosStr = this.undefinedScenarioCount ? colorize('[yellow]{' + this.undefinedScenarioCount + ' undefined}') : '';
+		var undefinedStepsStr = this.undefinedStepCount ? colorize('[yellow]{' + this.undefinedStepCount + ' undefined}') : '';
 
-		var passedScenariosStr = passedScenarioCount ? colorize('[green]{' + passedScenarioCount + ' passed}') : '';
-		var passedStepsStr = passedStepCount ? colorize('[green]{' + passedStepCount + ' passed}') : '';
+		var passedScenariosStr = this.passedScenarioCount ? colorize('[green]{' + this.passedScenarioCount + ' passed}') : '';
+		var passedStepsStr = this.passedStepCount ? colorize('[green]{' + this.passedStepCount + ' passed}') : '';
 
-		var pendingScenariosStr = pendingScenarioCount ? colorize('[yellow]{' + pendingScenarioCount + ' pending}') : '';
-		var pendingStepsStr = pendingStepCount ? colorize('[yellow]{' + pendingStepCount + ' pending}') : '';
+		var pendingScenariosStr = this.pendingScenarioCount ? colorize('[yellow]{' + this.pendingScenarioCount + ' pending}') : '';
+		var pendingStepsStr = this.pendingStepCount ? colorize('[yellow]{' + this.pendingStepCount + ' pending}') : '';
 
-		var skippedStepsStr = skippedStepCount ? colorize('[cyan]{' + skippedStepCount + ' skipped}') : '';
+		var skippedStepsStr = this.skippedStepCount ? colorize('[cyan]{' + this.skippedStepCount + ' skipped}') : '';
 
-		var failedScenariosStr = failedScenarioCount ? colorize('[red]{' + failedScenarioCount + ' failed}') : '';
-		var failedStepsStr = failedStepCount ? colorize('[red]{' + failedStepCount + ' failed}') : '';
+		var failedScenariosStr = this.failedScenarioCount ? colorize('[red]{' + this.failedScenarioCount + ' failed}') : '';
+		var failedStepsStr = this.failedStepCount ? colorize('[red]{' + this.failedStepCount + ' failed}') : '';
 
-		console.log(scenarioCount + ' scenarios (' + strJoin(passedScenariosStr, failedScenariosStr, undefinedScenariosStr, pendingScenariosStr) + ')');
-		console.log(stepCount + ' steps (' + strJoin(passedStepsStr, failedStepsStr, skippedStepsStr, undefinedStepsStr, pendingStepsStr) + ')');
+		console.log(this.scenarioCount + ' scenarios (' + strJoin(passedScenariosStr, failedScenariosStr, undefinedScenariosStr, pendingScenariosStr) + ')');
+		console.log(this.stepCount + ' steps (' + strJoin(passedStepsStr, failedStepsStr, skippedStepsStr, undefinedStepsStr, pendingStepsStr) + ')');
 
-		var timeElapsed = (Date.now() - startTime)/1000;
+		var timeElapsed = (Date.now() - this.startTime)/1000;
 
 		var minutes = Math.floor(timeElapsed / 60);
 		var seconds = timeElapsed - minutes*60;
@@ -141,11 +166,11 @@ var formatter = {
 		console.log(minutes + 'm' + seconds.toFixed(3) + 's');
 		console.log();
 
-		if (_.keys(undefinedSteps).length) {
+		if (_.keys(this.undefinedSteps).length) {
 			console.log(colorize('[yellow]{You can implement step definitions for undefined steps with these snippets:\n}'));
 			console.log(colorize('yellow', 'var Steps = require(\'cucumis\').Steps;\n'));
 
-			for (var undefinedStep in undefinedSteps) {
+			for (var undefinedStep in formatter.undefinedSteps) {
 				console.log(colorize('yellow', undefinedStep));
 			}
 
@@ -153,6 +178,8 @@ var formatter = {
 		}
 	},
 };
+
+var formatter = new Formatter();
 
 process.on('uncaughtException', function (err) {
 	if (_stepError.id) {
@@ -241,25 +268,6 @@ try {
 } catch (err) {
 }
 
-var undefinedSteps = {};
-
-var scenarioCount = 0;
-var stepCount = 0;
-
-var undefinedStepCount = 0;
-var undefinedScenarioCount = 0;
-
-var passedStepCount = 0;
-var passedScenarioCount = 0;
-
-var pendingStepCount = 0;
-var pendingScenarioCount = 0;
-
-var skippedStepCount = 0;
-
-var failedStepCount = 0;
-var failedScenarioCount = 0;
-var startTime = Date.now();
 
 runFeatures(runPath, runPattern);
 
@@ -300,7 +308,9 @@ function runFeatures(runPath, runPattern) {
 			if (features.length) {
 				runFeature(features.shift(), next);
 			} else {
-				notifyListeners('afterTest', formatter.afterTest);
+				notifyListeners('afterTest', function() {
+					formatter.afterTest();
+				});
 			}
 		})();
 	});
@@ -394,7 +404,7 @@ function runFeature(featureFile, cb) {
 }
 
 function runScenario(scenario, cb) {
-	scenarioCount++;
+	formatter.scenarioCount++;
 
 	var testState = {
 		scenarioState: 'passed',
@@ -440,19 +450,19 @@ function runScenario(scenario, cb) {
 					runExampleSet(scenario, exampleSets.shift(), testState, next);
 				} else {
 					if (testState.scenarioUndefined) {
-						undefinedScenarioCount++;
+						formatter.undefinedScenarioCount++;
 					} else {
 						switch (testState.scenarioState) {
 							case 'failed':
-								failedScenarioCount++;
+								formatter.failedScenarioCount++;
 								break;
 
 							case 'pending':
-								pendingScenarioCount++;
+								formatter.pendingScenarioCount++;
 								break;
 
 							case 'passed':
-								passedScenarioCount++;
+								formatter.passedScenarioCount++;
 								break;
 								
 						}
@@ -483,7 +493,7 @@ function runExampleSet(scenario, exampleSet, testState, cb) {
 
 	(function next(){
 		if (steps.length) {
-			stepCount++;
+			formatter.stepCount++;
 			var step = steps.shift();
 			formatter.beforeStep(step);
 
@@ -536,7 +546,7 @@ function runStep(scenario, step, exampleSet, testState, cb) {
 			runStepDef(myStepDefs.shift(), stepType, stepText, testState, next);
 		} else {
 			if (!testState.foundStepDef) { // Undefined step
-				undefinedStepCount++;
+				formatter.undefinedStepCount++;
 				testState.scenarioUndefined = true;
 
 				testState.result = 'undefined';
@@ -557,7 +567,7 @@ function runStep(scenario, step, exampleSet, testState, cb) {
 				});
 
 				var snippet = undefinedStepTemplate({type: stepType, title: re, args: [''].concat(args).join(', ')});
-				undefinedSteps[snippet] = true;
+				formatter.undefinedSteps[snippet] = true;
 			}
 
 			formatter.afterStepResult(scenario, stepLine, testState.result, testState.msg);
@@ -592,7 +602,7 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 							if (runTest) {
 								clearTimeout(id);
 								testState.result = 'pass';
-								passedStepCount ++;
+								formatter.passedStepCount ++;
 
 								cb();
 							}
@@ -602,7 +612,7 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 							if (runTest) {
 								clearTimeout(id);
 								testState.result = 'pending';
-								pendingStepCount ++;
+								formatter.pendingStepCount ++;
 
 								testState.msg = 'TODO: Pending';
 								testState.skip = true;
@@ -620,7 +630,7 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 				}
 			} else {
 				testState.result = 'skipped';
-				skippedStepCount ++;
+				formatter.skippedStepCount ++;
 				cb();
 			}
 
@@ -638,7 +648,7 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 		testState.msg = errors.join('\n');
 
 		testState.result = 'fail';
-		failedStepCount ++;
+		formatter.failedStepCount ++;
 		testState.scenarioState = 'failed';
 		testState.skip = true;
 
