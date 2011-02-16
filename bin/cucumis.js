@@ -10,7 +10,7 @@ var cucumis = require('../lib/cucumis'),
 var boring = false;
 
 // test timeout
-var timeout = 10000;
+var timeout = 5000;
 
 // Prefer mustache style templates
 _.templateSettings = {
@@ -51,29 +51,34 @@ process.on('uncaughtException', function (err) {
 
 function processCmdLine() {
 	var usage = colorize(''
-	  + '[bold]{Usage}: cucumis [options] [path]\n'
-	  + '\n'
-	  + '[bold]{Exmample}\n'
-	  + 'cucumis examples/features\n'
-	  + '\n'
-	  + '[bold]{Options}:\n'
-	  + '  -h, --help             Output help information\n'
-	  );
+		+ '[bold]{Usage}: cucumis [options] [path]\n'
+		+ '\n'
+		+ '[bold]{Exmample}\n'
+		+ 'cucumis examples/features\n'
+		+ '\n'
+		+ '[bold]{Options}:\n'
+		+ '  -h, --help             Output help information\n'
+		+ '  -t, --timeout MS       Async step timeout in milliseconds, defaults to 5000\n'
+	);
 
 	// Parse arguments
 	var args = process.argv.slice(2)
-	  , path = null;
+	           , path = null;
 
 	while (args.length) {
-	  var arg = args.shift();
-	  switch (arg) {
-		case '-h':
-		case '--help':
-		  abort(usage);
-		  break;
-		default:
-			path = arg;
-	  }
+		var arg = args.shift();
+		switch (arg) {
+			case '-h':
+			case '--help':
+				abort(usage);
+				break;
+			case '-t':
+			case '--timeout':
+				timeout = parseInt(args.shift());
+				break;
+			default:
+				path = arg;
+		}
 	}
 
 	return path;
