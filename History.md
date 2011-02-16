@@ -1,4 +1,10 @@
 
+v1.0.12 / 2011-02-16 
+==================
+
+  * command line parameters to run a directory or a file
+  * updating readme
+
 v1.0.11 / 2011-02-16 
 ==================
 
