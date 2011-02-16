@@ -402,6 +402,7 @@ function runStep(scenario, step, exampleSet, testState, cb) {
 	testState.foundStepDef = false;
 	testState.result = 'pass';
 	testState.msg = '';
+	testState.err = null;
 
 	var myStepDefs = _.clone(stepDefs);
 
@@ -435,7 +436,7 @@ function runStep(scenario, step, exampleSet, testState, cb) {
 				formatter.undefinedSteps[snippet] = true;
 			}
 
-			formatter.afterStepResult(scenario, stepLine, testState.result, testState.msg);
+			formatter.afterStepResult(scenario, stepLine, testState.result, testState.msg, testState.err);
 
 			cb();
 		}
@@ -506,11 +507,7 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 	function stepError(id, err) {
 		clearTimeout(id);
 
-		var errors = [];
-		errors.push(err.name ? 'name: ' + err.name : '');
-		errors.push(err.message ? 'message: ' + err.message : '');
-		errors.push(err.stack ? indent(err.stack, 2) : '');
-		testState.msg = errors.join('\n');
+		testState.err = err;
 
 		testState.result = 'fail';
 		formatter.failedStepCount ++;
