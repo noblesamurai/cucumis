@@ -2,6 +2,7 @@
 
 var cucumis = require('../lib/cucumis'),
     path = require('path'),
+	should = require('should'),
     fs = require('fs'),
 	_ = require('underscore'),
 	globSync = require('glob').globSync,
@@ -20,14 +21,6 @@ _.templateSettings = {
 // template for undefined steps
 var undefinedStepTemplate = _.template(fs.readFileSync(path.join(__dirname, '../lib/templates/stepdef.js.tpl')).toString());
 
-// uncaught expception handling
-var _stepError = {
-	id: 0,
-	handler: function(id, err) {
-		throw err;
-	},
-};
-
 // escapes regexs
 RegExp.escape = function(str)
 {
@@ -35,18 +28,6 @@ RegExp.escape = function(str)
   return str.replace(specials, "\\$&");
 }
 
-var Formatter = require('../lib/formatters/basic.formatter').Formatter;
-
-var formatter = new Formatter();
-
-process.on('uncaughtException', function (err) {
-	if (_stepError.id) {
-		_stepError.handler(_stepError.id, err);
-	} else {
-		console.log(err);
-		formatter.generalUncaughtException(err);
-	}
-});
 
 function processCmdLine() {
 	var usage = colorize(''
@@ -57,6 +38,9 @@ function processCmdLine() {
 		+ '\n'
 		+ '[bold]{Options}:\n'
 		+ '  -h, --help             Output help information\n'
+	    + '  -f, --format FORMAT    How to format features (Default: pretty). Available formats:\n'
+		+ '                           pretty      : Prints the feature as is - in colours\n'
+		+ '                           json        : Prints the feature as JSON\n'
         + '  -b, --boring           Suppress ansi-escape colors\n'
 		+ '  -t, --timeout MS       Async step timeout in milliseconds, defaults to 5000\n'
 	);
@@ -72,14 +56,22 @@ function processCmdLine() {
 			case '--help':
 				abort(usage);
 				break;
+
 			case '-t':
 			case '--timeout':
 				timeout = parseInt(args.shift());
 				break;
+
 			case '-b':
 			case '--boring':
 				colorizelib.boring = true;
 				break;
+
+			case '-f':
+			case '--format':
+				format = args.shift();
+				break;
+
 			default:
 				path = arg;
 		}
@@ -88,7 +80,27 @@ function processCmdLine() {
 	return path;
 }
 
+var format = 'pretty';
 var runPath = processCmdLine();
+
+var Formatter = require('../lib/formatters/' + format + '.formatter').Formatter;
+var formatter = new Formatter();
+
+// uncaught expception handling
+var _stepError = {
+	id: 0,
+	handler: function(id, err) {
+		throw err;
+	},
+};
+
+process.on('uncaughtException', function (err) {
+	if (_stepError.id) {
+		_stepError.handler(_stepError.id, err);
+	} else {
+		formatter.generalUncaughtException(err);
+	}
+});
 
 if (runPath === null) {
 	runPath = 'features';

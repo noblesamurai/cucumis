@@ -1,6 +1,4 @@
-var Steps = require('kyuri').Steps;
-
-require('should');
+var Steps = require('cucumis').Steps;
 
 var Calculator = function() {
 	this._stack = [];
