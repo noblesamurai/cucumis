@@ -35,10 +35,9 @@ RegExp.escape = function(str)
   return str.replace(specials, "\\$&");
 }
 
-process.on('uncaughtException', function (err) {
-	if (_stepError.id) {
-		_stepError.handler(_stepError.id, err);
-	} else {
+// Format printing object
+var formatter = {
+	generalUncaughtException: function(err) {
 		var errors = [];
 		errors.push(err.name ? 'name: ' + err.name : '');
 		errors.push(err.message ? 'message: ' + err.message : '');
@@ -46,6 +45,120 @@ process.on('uncaughtException', function (err) {
 
 		console.log(indent(colorize('red', 'Error caught:')));
 		console.log(indent(colorize('red', errors.join('\n')), 2));
+	},
+
+	asyncStepTimeoutError: function(eventName, level, err) {
+		if (err) {
+			var errors = [];
+			errors.push(err.name ? 'name: ' + err.name : '');
+			errors.push(err.message ? 'message: ' + err.message : '');
+			errors.push(err.stack ? indent(err.stack, 1) : '');
+
+			console.log(indent(colorize('red', 'Error while processing event: ' + eventName), level));
+			console.log(indent(colorize('red', errors.join('\n')), level + 1));
+		} else {
+			console.log(indent(colorize('red', 'Timeout waiting for response on event: ' + eventName + '\n'), level));
+		}
+	},
+
+	beforeFeature: function(feature) {
+		console.log('Feature: ' + feature.name);
+		console.log(indent(feature.description, 1));
+	},
+
+	afterFeature: function(feature) {
+	},
+
+	beforeScenario: function(scenario) {
+		console.log(indent('Scenario' + (scenario.outline ? ' Outline' : '') + ': ' + scenario.name, 1));
+	},
+
+	afterScenario: function(scenario) {
+	},
+
+	beforeBackground: function(scenario) {
+		if (!scenario.backgroundPrinted) {
+			console.log(indent('Background:', 1));
+		}
+	},
+
+	afterBackground: function(scenario) {
+	},
+
+	beforeStep: function(step) {
+	},
+
+	afterStep: function(step) {
+	},
+
+	afterSteps: function(scenario) {
+		if (!scenario.background || (scenario.background && !scenario.backgroundPrinted)) {
+			console.log('');
+		}
+	},
+
+	afterStepResult: function(scenario, stepLine, result, msg) {
+		var colorMap = {
+			'pass': 'green',
+			'fail': 'red',
+			'pending': 'yellow',
+			'skipped': 'cyan',
+			'undefined': 'yellow',
+		};
+
+		if (!scenario.background || (scenario.background && !scenario.backgroundPrinted)) {
+			console.log(indent(colorize(colorMap[result], stepLine), 2));
+		}
+
+		if (msg) {
+			console.log(indent(colorize(colorMap[result], msg), 3));
+		}
+	},
+
+	afterTest: function() {
+		var undefinedScenariosStr = undefinedScenarioCount ? colorize('[yellow]{' + undefinedScenarioCount + ' undefined}') : '';
+		var undefinedStepsStr = undefinedStepCount ? colorize('[yellow]{' + undefinedStepCount + ' undefined}') : '';
+
+		var passedScenariosStr = passedScenarioCount ? colorize('[green]{' + passedScenarioCount + ' passed}') : '';
+		var passedStepsStr = passedStepCount ? colorize('[green]{' + passedStepCount + ' passed}') : '';
+
+		var pendingScenariosStr = pendingScenarioCount ? colorize('[yellow]{' + pendingScenarioCount + ' pending}') : '';
+		var pendingStepsStr = pendingStepCount ? colorize('[yellow]{' + pendingStepCount + ' pending}') : '';
+
+		var skippedStepsStr = skippedStepCount ? colorize('[cyan]{' + skippedStepCount + ' skipped}') : '';
+
+		var failedScenariosStr = failedScenarioCount ? colorize('[red]{' + failedScenarioCount + ' failed}') : '';
+		var failedStepsStr = failedStepCount ? colorize('[red]{' + failedStepCount + ' failed}') : '';
+
+		console.log(scenarioCount + ' scenarios (' + strJoin(passedScenariosStr, failedScenariosStr, undefinedScenariosStr, pendingScenariosStr) + ')');
+		console.log(stepCount + ' steps (' + strJoin(passedStepsStr, failedStepsStr, skippedStepsStr, undefinedStepsStr, pendingStepsStr) + ')');
+
+		var timeElapsed = (Date.now() - startTime)/1000;
+
+		var minutes = Math.floor(timeElapsed / 60);
+		var seconds = timeElapsed - minutes*60;
+
+		console.log(minutes + 'm' + seconds.toFixed(3) + 's');
+		console.log();
+
+		if (_.keys(undefinedSteps).length) {
+			console.log(colorize('[yellow]{You can implement step definitions for undefined steps with these snippets:\n}'));
+			console.log(colorize('yellow', 'var Steps = require(\'cucumis\').Steps;\n'));
+
+			for (var undefinedStep in undefinedSteps) {
+				console.log(colorize('yellow', undefinedStep));
+			}
+
+			console.log(colorize('yellow', 'Steps.export(module);\n'));
+		}
+	},
+};
+
+process.on('uncaughtException', function (err) {
+	if (_stepError.id) {
+		_stepError.handler(_stepError.id, err);
+	} else {
+		formatter.generalUncaughtException(err);
 	}
 });
 
@@ -58,6 +171,7 @@ function processCmdLine() {
 		+ '\n'
 		+ '[bold]{Options}:\n'
 		+ '  -h, --help             Output help information\n'
+        + '  -b, --boring           Suppress ansi-escape colors\n'
 		+ '  -t, --timeout MS       Async step timeout in milliseconds, defaults to 5000\n'
 	);
 
@@ -75,6 +189,10 @@ function processCmdLine() {
 			case '-t':
 			case '--timeout':
 				timeout = parseInt(args.shift());
+				break;
+			case '-b':
+			case '--boring':
+				boring = true;
 				break;
 			default:
 				path = arg;
@@ -182,7 +300,7 @@ function runFeatures(runPath, runPattern) {
 			if (features.length) {
 				runFeature(features.shift(), next);
 			} else {
-				notifyListeners('afterTest', printReportSummary);
+				notifyListeners('afterTest', formatter.afterTest);
 			}
 		})();
 	});
@@ -199,7 +317,7 @@ function notifyListeners(eventName, cb, level) {
 
 			var id = setTimeout(function() {
 				responseOk = false;
-				console.log(indent(colorize('red', 'Timeout waiting for response on event: ' + eventName + '\n'), level));
+				formatter.asyncStepTimeoutError(eventName, level);
 				next();
 			}, 100);
 
@@ -207,14 +325,7 @@ function notifyListeners(eventName, cb, level) {
 			_stepError.handler = function(id, err) {
 				responseOk = false;
 				clearTimeout(id);
-
-				var errors = [];
-				errors.push(err.name ? 'name: ' + err.name : '');
-				errors.push(err.message ? 'message: ' + err.message : '');
-				errors.push(err.stack ? indent(err.stack, 1) : '');
-
-				console.log(indent(colorize('red', 'Error while processing event: ' + eventName), level));
-				console.log(indent(colorize('red', errors.join('\n')), level + 1));
+				formatter.asyncStepTimeoutError(eventName, level, err);
 
 				next();
 			};
@@ -229,47 +340,6 @@ function notifyListeners(eventName, cb, level) {
 			cb();
 		}
 	})();
-}
-
-function printReportSummary() {
-	// TODO: implement skipped and pending
-	// pending skips the rest of the steps
-
-	var undefinedScenariosStr = undefinedScenarioCount ? colorize('[yellow]{' + undefinedScenarioCount + ' undefined}') : '';
-	var undefinedStepsStr = undefinedStepCount ? colorize('[yellow]{' + undefinedStepCount + ' undefined}') : '';
-
-	var passedScenariosStr = passedScenarioCount ? colorize('[green]{' + passedScenarioCount + ' passed}') : '';
-	var passedStepsStr = passedStepCount ? colorize('[green]{' + passedStepCount + ' passed}') : '';
-
-	var pendingScenariosStr = pendingScenarioCount ? colorize('[yellow]{' + pendingScenarioCount + ' pending}') : '';
-	var pendingStepsStr = pendingStepCount ? colorize('[yellow]{' + pendingStepCount + ' pending}') : '';
-
-	var skippedStepsStr = skippedStepCount ? colorize('[cyan]{' + skippedStepCount + ' skipped}') : '';
-
-	var failedScenariosStr = failedScenarioCount ? colorize('[red]{' + failedScenarioCount + ' failed}') : '';
-	var failedStepsStr = failedStepCount ? colorize('[red]{' + failedStepCount + ' failed}') : '';
-
-	console.log(scenarioCount + ' scenarios (' + strJoin(passedScenariosStr, failedScenariosStr, undefinedScenariosStr, pendingScenariosStr) + ')');
-	console.log(stepCount + ' steps (' + strJoin(passedStepsStr, failedStepsStr, skippedStepsStr, undefinedStepsStr, pendingStepsStr) + ')');
-
-	var timeElapsed = (Date.now() - startTime)/1000;
-
-	var minutes = Math.floor(timeElapsed / 60);
-	var seconds = timeElapsed - minutes*60;
-
-	console.log(minutes + 'm' + seconds.toFixed(3) + 's');
-	console.log();
-
-	if (_.keys(undefinedSteps).length) {
-		console.log(colorize('[yellow]{You can implement step definitions for undefined steps with these snippets:\n}'));
-		console.log(colorize('yellow', 'var Steps = require(\'cucumis\').Steps;\n'));
-
-		for (var undefinedStep in undefinedSteps) {
-			console.log(colorize('yellow', undefinedStep));
-		}
-
-		console.log(colorize('yellow', 'Steps.export(module);\n'));
-	}
 }
 
 function runFeature(featureFile, cb) {
@@ -297,8 +367,7 @@ function runFeature(featureFile, cb) {
 
 			var feature = ast[index];
 
-			console.log('Feature: ' + feature.name);
-			console.log(indent(feature.description, 1));
+			formatter.beforeFeature(feature);
 
 			notifyListeners('beforeFeature', function() {
 
@@ -309,12 +378,13 @@ function runFeature(featureFile, cb) {
 					(function next(){
 							if (scenarios.length) {
 								background(function() {
-									runScenario(scenarios.shift(), function() {
-										notifyListeners('afterFeature', next);
-									});
+									runScenario(scenarios.shift(), next);
 								});
 							} else {
-								cb();
+								notifyListeners('afterFeature', function() {
+									formatter.afterFeature(feature);
+									cb();
+								});
 							}
 					})();
 				}
@@ -335,12 +405,11 @@ function runScenario(scenario, cb) {
 
 	var notifyEventType = 'Scenario';
 	if (scenario.background) {
-		if (!scenario.backgroundPrinted) {
-			console.log(indent('Background:', 1));
-		}
+		formatter.beforeBackground(scenario);
 		notifyEventType = 'Background';
+
 	} else {
-		console.log(indent('Scenario' + (scenario.outline ? ' Outline' : '') + ': ' + scenario.name, 1));
+		formatter.beforeScenario(scenario);
 	}
 
 	notifyListeners('before' + notifyEventType, function() {
@@ -389,6 +458,11 @@ function runScenario(scenario, cb) {
 						}
 					}
 
+					if (notifyEventType == 'Background') {
+						formatter.afterBackground(scenario);
+					} else {
+						formatter.afterScenario(scenario);
+					}
 					notifyListeners('after' + notifyEventType, cb);
 				}
 			})();
@@ -410,16 +484,22 @@ function runExampleSet(scenario, exampleSet, testState, cb) {
 	(function next(){
 		if (steps.length) {
 			stepCount++;
+			var step = steps.shift();
+			formatter.beforeStep(step);
+
 			notifyListeners('beforeStep', function() {
-				runStep(scenario, steps.shift(), exampleSet, testState, function() {
-					notifyListeners('afterStep', next);
+				runStep(scenario, step, exampleSet, testState, function() {
+					notifyListeners('afterStep', function() {
+						formatter.afterStep(step);
+						next();
+					});
 				});
 			});
 		} else {
-			if (!scenario.background || (scenario.background && !scenario.backgroundPrinted)) {
-				console.log('');
-			}
-			cb();
+			notifyListeners('afterSteps', function() {
+				formatter.afterSteps(scenario);
+				cb();
+			});
 		}
 	})();
 }
@@ -445,7 +525,7 @@ function runStep(scenario, step, exampleSet, testState, cb) {
 	var stepLine = capitalize(step[0]) + ' ' + stepText;
 
 	testState.foundStepDef = false;
-	testState.color = 'green';
+	testState.result = 'pass';
 	testState.msg = '';
 
 	var myStepDefs = _.clone(stepDefs);
@@ -459,7 +539,8 @@ function runStep(scenario, step, exampleSet, testState, cb) {
 				undefinedStepCount++;
 				testState.scenarioUndefined = true;
 
-				testState.color = 'yellow';
+				testState.result = 'undefined';
+				testState.skip = true;
 
 				// smart parametrization of numbers and strings
 				var re = stepText;
@@ -479,13 +560,7 @@ function runStep(scenario, step, exampleSet, testState, cb) {
 				undefinedSteps[snippet] = true;
 			}
 
-			if (!scenario.background || (scenario.background && !scenario.backgroundPrinted)) {
-				console.log(indent(colorize(testState.color, stepLine), 2));
-			}
-
-			if (testState.msg) {
-				console.log(indent(testState.msg, 3));
-			}
+			formatter.afterStepResult(scenario, stepLine, testState.result, testState.msg);
 
 			cb();
 		}
@@ -516,7 +591,7 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 						done: function() {
 							if (runTest) {
 								clearTimeout(id);
-								testState.color = 'green';
+								testState.result = 'pass';
 								passedStepCount ++;
 
 								cb();
@@ -526,10 +601,10 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 						pending: function() {
 							if (runTest) {
 								clearTimeout(id);
-								testState.color = 'yellow';
+								testState.result = 'pending';
 								pendingStepCount ++;
 
-								testState.msg = colorize('yellow', 'TODO: Pending');
+								testState.msg = 'TODO: Pending';
 								testState.skip = true;
 
 								testState.scenarioState = 'pending';
@@ -544,7 +619,7 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 					stepError(id, err);
 				}
 			} else {
-				testState.color = 'cyan';
+				testState.result = 'skipped';
 				skippedStepCount ++;
 				cb();
 			}
@@ -560,9 +635,9 @@ function runStepDef(stepDef, stepType, stepText, testState, cb) {
 		errors.push(err.name ? 'name: ' + err.name : '');
 		errors.push(err.message ? 'message: ' + err.message : '');
 		errors.push(err.stack ? indent(err.stack, 2) : '');
-		testState.msg = colorize('red', errors.join('\n'));
+		testState.msg = errors.join('\n');
 
-		testState.color = 'red';
+		testState.result = 'fail';
 		failedStepCount ++;
 		testState.scenarioState = 'failed';
 		testState.skip = true;

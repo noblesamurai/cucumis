@@ -1,4 +1,11 @@
 
+v1.0.13 / 2011-02-16 
+==================
+
+  * can override async step timeout with a commandline option
+  * Release v1.0.12
+  * command line parameters to run a directory or a file
+
 v1.0.12 / 2011-02-16 
 ==================
 
