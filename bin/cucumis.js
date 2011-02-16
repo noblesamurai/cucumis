@@ -229,7 +229,7 @@ function runFeature(featureFile, cb) {
 		if (ast[index]) {
 			// Extract background
 			var background = function(cb) {
-				cb();	
+				cb();
 			};
 
 			var _background = background;
@@ -237,9 +237,13 @@ function runFeature(featureFile, cb) {
 			if (ast[index].background) {
 				ast[index].background.background = true;
 				background = function(cb) {
-					runScenario(_background, ast[index].background, function () {
-						ast[index].background.backgroundPrinted = true;
-						cb();
+					formatter.beforeBackground(ast[index].background);
+					notifyListeners('beforeBackground', function() {
+						runScenario(_background, ast[index].background, function () {
+							ast[index].background.backgroundPrinted = true;
+							formatter.afterBackground(ast[index].background);
+							notifyListeners('afterBackground', cb);
+						});
 					});
 				}
 			}
@@ -278,12 +282,8 @@ function runScenario(background, scenario, cb) {
 	};
 
 	var notifyEventType = 'Scenario';
-	if (scenario.background) {
-		formatter.beforeBackground(scenario);
+	if (background) {
 		notifyEventType = 'Background';
-
-	} else {
-		formatter.beforeScenario(scenario);
 	}
 
 	notifyListeners('before' + notifyEventType, function() {
@@ -312,19 +312,26 @@ function runScenario(background, scenario, cb) {
 
 				if (exampleSets.length) {
 					background(function() {
-						runExampleSet(scenario, exampleSets.shift(), testState, next);
+						if (!scenario.background) {
+							formatter.beforeScenario(scenario);
+							notifyListeners('beforeScenario', function() {
+								runExampleSet(scenario, exampleSets.shift(), testState, next);
+							});
+						} else {
+							runExampleSet(scenario, exampleSets.shift(), testState, next);
+						}
 					});
 				} else {
 					if (testState.scenarioUndefined) {
 						formatter.undefinedScenarioCount++;
 					}
 
-					if (notifyEventType == 'Background') {
-						formatter.afterBackground(scenario);
-					} else {
+					if (!scenario.background) {
 						formatter.afterScenario(scenario);
+						notifyListeners('afterScenario', cb);
+					} else {
+						cb();
 					}
-					notifyListeners('after' + notifyEventType, cb);
 				}
 			})();
 		}

@@ -28,7 +28,7 @@ Feature: Run basic features
 		Then the feature's "name" should be "Addition"
 		And the feature's "description" should be "In order to avoid silly mistakes\nAs a math idiot\nI want to be able to add up numbers\n"
 		Then the feature should have a background
-		And the feature should have 4 scenarios
+		And the feature should have 5 scenarios
 
 		When I select the Scenario "Add three numbers"
 		Then the scenario should have 7 steps
