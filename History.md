@@ -1,4 +1,10 @@
 
+v1.0.17 / 2011-02-17 
+==================
+
+  * Fixed up scenario outline formatting
+  * Fixed background order bug
+
 v1.0.16 / 2011-02-16 
 ==================
 
