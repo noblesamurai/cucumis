@@ -432,7 +432,7 @@ function runStep(scenario, step, exampleSet, testState, cb) {
 				testState.skip = true;
 
 				// smart parametrization of numbers and strings
-				var re = stepText;
+				var re = RegExp.escape(stepText).replace(/\//g, '\\/');
 				var args = [];
 
 				re = re.replace(/(\s|^)(\d+)(\s|$)/, function(str, m1, m2, m3) {
