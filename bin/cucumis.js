@@ -196,7 +196,7 @@ function notifyListeners(eventName, cb, level) {
 				responseOk = false;
 				formatter.asyncStepTimeoutError(eventName, level);
 				next();
-			}, 100);
+			}, timeout);
 
 			_stepError.id = id;
 			_stepError.handler = function(id, err) {
