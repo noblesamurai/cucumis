@@ -7,7 +7,7 @@
     "author": "Eugene Ware <eugene@noblesamurai.com>",
     "maintainers": ["Eugene Ware <eugene@noblesamurai.com>"],
     "licenses": ["MIT"],
-    "dependencies": {"should": ">=0.2.1", "underscore": ">=1.1.4", "glob": ">=1.1.0", "vows": ">=0.5.8"},
+    "dependencies": {"should": ">=0.2.1", "underscore": ">=1.1.4", "glob": ">=1.1.0", "vows": ">=0.5.8", "eyes": ">=0.1.6"},
     "main": "./lib/cucumis",
     "bin": "./bin/cucumis",
     "repository": { "type": "git", "url": "http://github.com/noblesamurai/cucumis.git" }
