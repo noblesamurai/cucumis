@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/noblesamurai/cucumis.png)](http://travis-ci.org/noblesamurai/cucumis)
 # cucumis
 
 Cucumis is a basic implementation of [cucumber's](http://cukes.info) [gherkin](https://github.com/aslakhellesoy/cucumber/wiki/gherkin) BDD plain-english testing language in node.js. 
